@@ -9,6 +9,7 @@ pub(crate) enum OpCode {
 #[derive(Debug)]
 pub(crate) struct Chunk {
     code: Vec<OpCode>,
+    lines: Vec<i32>,
     constants: ValueArray,
 }
 
@@ -16,18 +17,19 @@ impl Chunk {
     pub(crate) fn new() -> Self {
         Chunk {
             code: Vec::new(),
+            lines: Vec::new(),
             constants: ValueArray::new(),
         }
     }
 
-    pub(crate) fn write_chunk(&mut self, byte: OpCode) {
+    pub(crate) fn write_chunk(&mut self, byte: OpCode, line: i32) {
         self.code.push(byte);
+        self.lines.push(line);
     }
 
-    pub(crate) fn add_constant(&mut self, value: Value) {
+    pub(crate) fn add_constant(&mut self, value: Value) -> usize {
         self.constants.write_value_array(value);
-        let offset = self.constants.len() - 1;
-        self.write_chunk(OpCode::Constant(offset as u8));
+        self.constants.len() - 1
     }
 
     pub(crate) fn disassemble(&self, name: &str) {

@@ -6,10 +6,10 @@ use value::Value;
 
 fn main() {
     let mut chunk = Chunk::new();
-    chunk.add_constant(Value(1.2));
-    chunk.write_chunk(OpCode::Return);
+    let constant = chunk.add_constant(Value(1.2));
+    chunk.write_chunk(OpCode::Constant(constant as u8), 123);
+    chunk.write_chunk(OpCode::Return, 123);
 
     dbg!(&chunk);
-
     chunk.disassemble("test");
 }
