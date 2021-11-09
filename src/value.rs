@@ -1,7 +1,7 @@
 use std::ops::Index;
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct Value(pub(crate) f64);
+pub struct Value(pub f64);
 
 #[derive(Debug)]
 pub(crate) struct ValueArray {

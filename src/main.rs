@@ -1,8 +1,5 @@
-mod chunk;
-mod value;
-
-use chunk::{Chunk, OpCode};
-use value::Value;
+use rlox::chunk::{Chunk, OpCode};
+use rlox::value::Value;
 
 fn main() {
     let mut chunk = Chunk::new();
