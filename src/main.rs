@@ -1,5 +1,6 @@
 use rlox::chunk::{Chunk, OpCode};
 use rlox::value::Value;
+use rlox::vm::VM;
 
 fn main() {
     let mut chunk = Chunk::new();
@@ -9,4 +10,9 @@ fn main() {
 
     dbg!(&chunk);
     chunk.disassemble("test");
+
+    println!("{}", "=".repeat(80));
+
+    let mut vm = VM::new(chunk);
+    vm.run();
 }

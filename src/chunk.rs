@@ -8,9 +8,9 @@ pub enum OpCode {
 
 #[derive(Debug)]
 pub struct Chunk {
-    code: Vec<OpCode>,
-    lines: Vec<i32>,
-    constants: ValueArray,
+    pub code: Vec<OpCode>,
+    pub lines: Vec<i32>,
+    pub constants: ValueArray,
 }
 
 impl Chunk {

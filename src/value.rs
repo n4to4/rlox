@@ -4,12 +4,12 @@ use std::ops::Index;
 pub struct Value(pub f64);
 
 #[derive(Debug)]
-pub(crate) struct ValueArray {
-    values: Vec<Value>,
+pub struct ValueArray {
+    pub values: Vec<Value>,
 }
 
 impl ValueArray {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         ValueArray { values: Vec::new() }
     }
 
@@ -19,6 +19,12 @@ impl ValueArray {
 
     pub(crate) fn len(&self) -> usize {
         self.values.len()
+    }
+}
+
+impl std::fmt::Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
