@@ -35,19 +35,23 @@ impl Chunk {
     pub fn disassemble(&self, name: &str) {
         println!("=== {} ===", name);
 
-        for (offset, c) in self.code.iter().enumerate() {
-            print!("{:04} ", offset);
-            if offset > 0 && self.lines[offset] == self.lines[offset - 1] {
-                print!("   | ");
-            } else {
-                print!("{:4} ", self.lines[offset]);
-            }
-            match *c {
-                OpCode::Return => println!("{:?}", OpCode::Return),
-                OpCode::Constant(off) => {
-                    println!("Constant {:}", self.constants[off].0);
-                }
-            }
+        for offset in 0..self.code.len() {
+            disassemble_instruction(self, offset);
+        }
+    }
+}
+
+pub fn disassemble_instruction(chunk: &Chunk, offset: usize) {
+    print!("{:04} ", offset);
+    if offset > 0 && chunk.lines[offset] == chunk.lines[offset - 1] {
+        print!("   | ");
+    } else {
+        print!("{:4} ", chunk.lines[offset]);
+    }
+    match chunk.code[offset] {
+        OpCode::Return => println!("{:?}", OpCode::Return),
+        OpCode::Constant(off) => {
+            println!("Constant {:}", chunk.constants[off].0);
         }
     }
 }

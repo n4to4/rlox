@@ -1,5 +1,7 @@
-use crate::chunk::{Chunk, OpCode};
+use crate::chunk::{disassemble_instruction, Chunk, OpCode};
 use crate::value::Value;
+
+const DEBUG_TRACE_EXECUTION: bool = true;
 
 pub struct VM {
     chunk: Chunk,
@@ -19,6 +21,10 @@ impl VM {
 
     pub fn run(&mut self) -> InterpretResult {
         loop {
+            if DEBUG_TRACE_EXECUTION {
+                disassemble_instruction(&self.chunk, self.ip);
+            }
+
             match self.chunk.code[self.ip] {
                 OpCode::Constant(idx) => {
                     let constant = self.read_const(idx as usize);
