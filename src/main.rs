@@ -4,15 +4,26 @@ use rlox::vm::VM;
 
 fn main() {
     let mut chunk = Chunk::new();
+
     let constant = chunk.add_constant(Value(1.2));
     chunk.write_chunk(OpCode::Constant(constant as u8), 123);
+
+    let constant = chunk.add_constant(Value(3.4));
+    chunk.write_chunk(OpCode::Constant(constant as u8), 123);
+
+    chunk.write_chunk(OpCode::Add, 123);
+
+    let constant = chunk.add_constant(Value(5.6));
+    chunk.write_chunk(OpCode::Constant(constant as u8), 123);
+
+    chunk.write_chunk(OpCode::Divide, 123);
+    chunk.write_chunk(OpCode::Negate, 123);
     chunk.write_chunk(OpCode::Return, 123);
 
-    dbg!(&chunk);
-    chunk.disassemble("test");
+    //dbg!(&chunk);
+    //chunk.disassemble("test");
 
     println!("{}", "=".repeat(80));
-
     let mut vm = VM::new(chunk);
     vm.run();
 }

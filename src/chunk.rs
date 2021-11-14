@@ -3,6 +3,11 @@ use crate::value::{Value, ValueArray};
 #[derive(Debug, Clone, Copy)]
 pub enum OpCode {
     Constant(u8),
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    Negate,
     Return,
 }
 
@@ -49,9 +54,9 @@ pub fn disassemble_instruction(chunk: &Chunk, offset: usize) {
         print!("{:4} ", chunk.lines[offset]);
     }
     match chunk.code[offset] {
-        OpCode::Return => println!("{:?}", OpCode::Return),
         OpCode::Constant(off) => {
-            println!("Constant {:}", chunk.constants[off].0);
+            println!("Constant {}", chunk.constants[off].0);
         }
+        _ => println!("{:?}", &chunk.code[offset]),
     }
 }
