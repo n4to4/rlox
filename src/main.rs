@@ -1,29 +1,38 @@
-use rlox::chunk::{Chunk, OpCode};
-use rlox::value::Value;
 use rlox::vm::VM;
+use std::io::BufRead;
 
-fn main() {
-    let mut chunk = Chunk::new();
+fn main() -> anyhow::Result<()> {
+    let mut it = std::env::args();
+    if it.len() == 1 {
+        repl()?;
+    } else if it.len() == 2 {
+        run_file(&it.next().unwrap())?;
+    } else {
+        eprintln!("Usage: rlox [path]");
+    }
+    Ok(())
+}
 
-    let constant = chunk.add_constant(Value(1.2));
-    chunk.write_chunk(OpCode::Constant(constant as u8), 123);
+fn repl() -> std::io::Result<()> {
+    let mut vm = VM::new();
+    let stdin = std::io::stdin();
+    let mut line = String::new();
+    let mut handle = stdin.lock();
 
-    let constant = chunk.add_constant(Value(3.4));
-    chunk.write_chunk(OpCode::Constant(constant as u8), 123);
+    loop {
+        print!("> ");
+        let n = handle.read_line(&mut line)?;
+        if n == 0 || line.trim().is_empty() {
+            return Ok(());
+        }
 
-    chunk.write_chunk(OpCode::Add, 123);
+        let _ = vm.interpret(&line);
+    }
+}
 
-    let constant = chunk.add_constant(Value(5.6));
-    chunk.write_chunk(OpCode::Constant(constant as u8), 123);
-
-    chunk.write_chunk(OpCode::Divide, 123);
-    chunk.write_chunk(OpCode::Negate, 123);
-    chunk.write_chunk(OpCode::Return, 123);
-
-    //dbg!(&chunk);
-    //chunk.disassemble("test");
-
-    println!("{}", "=".repeat(80));
-    let mut vm = VM::new(chunk);
-    vm.run();
+fn run_file(path: &str) -> anyhow::Result<()> {
+    let mut vm = VM::new();
+    let source = std::fs::read_to_string(path)?;
+    vm.interpret(&source)?;
+    Ok(())
 }

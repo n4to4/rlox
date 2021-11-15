@@ -9,22 +9,30 @@ pub struct VM {
     stack: Vec<Value>,
 }
 
-pub enum InterpretResult {
-    InterpretOk,
-    InterpretCompileError,
-    InterpretRuntimeError,
+#[derive(Debug, thiserror::Error)]
+pub enum InterpretError {
+    #[error("Compile error")]
+    CompileError,
+    #[error("Runtime error")]
+    RuntimeError,
 }
 
 impl VM {
-    pub fn new(chunk: Chunk) -> Self {
+    pub fn new() -> Self {
         VM {
-            chunk,
+            chunk: Chunk::new(),
             ip: 0,
             stack: Vec::new(),
         }
     }
 
-    pub fn run(&mut self) -> InterpretResult {
+    pub fn interpret(&mut self, _source: &str) -> Result<(), InterpretError> {
+        //self.chunk = chunk;
+        //self.run()
+        todo!()
+    }
+
+    pub fn run(&mut self) -> Result<(), InterpretError> {
         loop {
             if DEBUG_TRACE_EXECUTION {
                 disassemble_instruction(&self.chunk, self.ip);
@@ -56,7 +64,7 @@ impl VM {
                     if let Some(value) = self.pop() {
                         println!("{}", value);
                     }
-                    return InterpretResult::InterpretOk;
+                    return Ok(());
                 }
             }
             self.ip += 1
