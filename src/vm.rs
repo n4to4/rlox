@@ -1,4 +1,5 @@
 use crate::chunk::{disassemble_instruction, Chunk, OpCode};
+use crate::compiler::Compiler;
 use crate::value::Value;
 
 const DEBUG_TRACE_EXECUTION: bool = true;
@@ -26,10 +27,9 @@ impl VM {
         }
     }
 
-    pub fn interpret(&mut self, _source: &str) -> Result<(), InterpretError> {
-        //self.chunk = chunk;
-        //self.run()
-        todo!()
+    pub fn interpret(&mut self, source: &str) -> anyhow::Result<(), InterpretError> {
+        Compiler::compile(source);
+        Ok(())
     }
 
     pub fn run(&mut self) -> Result<(), InterpretError> {
