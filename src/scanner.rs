@@ -62,6 +62,14 @@ impl<'src> Scanner<'src> {
         self.source.as_bytes()[self.current] as char
     }
 
+    fn peek_next(&self) -> Option<char> {
+        if self.is_at_end() {
+            None
+        } else {
+            Some(self.source.as_bytes()[self.current + 1] as char)
+        }
+    }
+
     fn skip_whitespace(&mut self) {
         loop {
             match self.peek() {
@@ -71,6 +79,15 @@ impl<'src> Scanner<'src> {
                 '\n' => {
                     self.line += 1;
                     self.advance();
+                }
+                '/' => {
+                    if let Some('/') = self.peek_next() {
+                        while self.peek() != '\n' && !self.is_at_end() {
+                            self.advance();
+                        }
+                    } else {
+                        return;
+                    }
                 }
                 _ => return,
             }
@@ -128,10 +145,15 @@ impl<'src> Scanner<'src> {
                 };
                 return self.make_token(token);
             }
+            '"' => return self.string(),
             _ => {}
         }
 
         self.error_token("Unexpected character.")
+    }
+
+    fn string(&mut self) -> Token {
+        todo!()
     }
 
     fn make_token(&self, typ: TokenType) -> Token {
