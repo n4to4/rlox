@@ -101,6 +101,12 @@ impl<'src> Scanner<'src> {
         }
 
         let c = self.advance();
+        if c.is_ascii_alphabetic() || c == '_' {
+            return self.identifier();
+        }
+        if c.is_digit(10) {
+            return self.number();
+        }
         match c {
             '(' => return self.make_token(TokenType::LeftParen),
             ')' => return self.make_token(TokenType::RightParen),
@@ -153,7 +159,46 @@ impl<'src> Scanner<'src> {
     }
 
     fn string(&mut self) -> Token {
-        todo!()
+        while self.peek() != '"' && !self.is_at_end() {
+            if self.peek() == '\n' {
+                self.line += 1;
+            }
+            self.advance();
+        }
+
+        if self.is_at_end() {
+            return self.error_token("Unterminated string.");
+        }
+
+        // The closing quote.
+        self.advance();
+        self.make_token(TokenType::String)
+    }
+
+    fn number(&mut self) -> Token {
+        while self.peek().is_digit(10) {
+            self.advance();
+        }
+        if self.peek() == '.' && self.peek_next().filter(|c| c.is_digit(10)).is_some() {
+            // Consume the ".".
+            self.advance();
+
+            while self.peek().is_digit(10) {
+                self.advance();
+            }
+        }
+        self.make_token(TokenType::Number)
+    }
+
+    fn identifier(&mut self) -> Token {
+        while self.peek().is_ascii_alphanumeric() || self.peek() == '_' {
+            self.advance();
+        }
+        self.make_token(self.identifier_type())
+    }
+
+    fn identifier_type(&self) -> TokenType {
+        TokenType::Identifier
     }
 
     fn make_token(&self, typ: TokenType) -> Token {
