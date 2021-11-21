@@ -28,8 +28,16 @@ impl VM {
     }
 
     pub fn interpret(&mut self, source: &str) -> anyhow::Result<(), InterpretError> {
-        Compiler::compile(source);
-        Ok(())
+        let mut chunk = Chunk::new();
+        let mut compiler = Compiler::new();
+        compiler
+            .compile(source, &mut chunk)
+            .map_err(|_err| InterpretError::CompileError)?;
+
+        self.chunk = chunk;
+        self.ip = 0;
+
+        self.run()
     }
 
     pub fn run(&mut self) -> Result<(), InterpretError> {

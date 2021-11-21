@@ -44,7 +44,7 @@ impl<'src> Scanner<'src> {
         }
     }
 
-    fn advance(&mut self) -> char {
+    pub fn advance(&mut self) -> char {
         self.current += 1;
         self.source.as_bytes()[self.current - 1] as char
     }
