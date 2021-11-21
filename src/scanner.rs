@@ -5,6 +5,7 @@ pub struct Scanner<'src> {
     line: usize,
 }
 
+#[derive(Debug)]
 pub struct Token<'src> {
     typ: TokenType,
     name: &'src str,
@@ -12,6 +13,7 @@ pub struct Token<'src> {
 }
 
 #[rustfmt::skip]
+#[derive(Debug, PartialEq, Eq)]
 pub enum TokenType {
     // Single-character tokens.
     LeftParen, RightParen, LeftBrace, RightBrace,
@@ -58,8 +60,12 @@ impl<'src> Scanner<'src> {
         true
     }
 
-    fn peek(&self) -> char {
-        self.source.as_bytes()[self.current] as char
+    fn peek(&self) -> Option<char> {
+        if self.current >= self.source.len() {
+            None
+        } else {
+            Some(self.source.as_bytes()[self.current] as char)
+        }
     }
 
     fn peek_next(&self) -> Option<char> {
@@ -70,26 +76,31 @@ impl<'src> Scanner<'src> {
         }
     }
 
+    #[allow(dead_code)]
     fn skip_whitespace(&mut self) {
         loop {
-            match self.peek() {
-                ' ' | '\r' | '\t' => {
-                    self.advance();
-                }
-                '\n' => {
-                    self.line += 1;
-                    self.advance();
-                }
-                '/' => {
-                    if let Some('/') = self.peek_next() {
-                        while self.peek() != '\n' && !self.is_at_end() {
-                            self.advance();
-                        }
-                    } else {
-                        return;
+            if let Some(c) = self.peek() {
+                match c {
+                    ' ' | '\r' | '\t' => {
+                        self.advance();
                     }
+                    '\n' => {
+                        self.line += 1;
+                        self.advance();
+                    }
+                    '/' => {
+                        if let Some('/') = self.peek_next() {
+                            while self.peek().filter(|c| *c != '\n').is_some() {
+                                self.advance();
+                            }
+                        } else {
+                            return;
+                        }
+                    }
+                    _ => return,
                 }
-                _ => return,
+            } else {
+                return;
             }
         }
     }
@@ -159,8 +170,8 @@ impl<'src> Scanner<'src> {
     }
 
     fn string(&mut self) -> Token {
-        while self.peek() != '"' && !self.is_at_end() {
-            if self.peek() == '\n' {
+        while let Some(c) = self.peek().filter(|c| *c != '"') {
+            if c == '\n' {
                 self.line += 1;
             }
             self.advance();
@@ -176,14 +187,14 @@ impl<'src> Scanner<'src> {
     }
 
     fn number(&mut self) -> Token {
-        while self.peek().is_digit(10) {
+        while self.peek().filter(|c| c.is_digit(10)).is_some() {
             self.advance();
         }
-        if self.peek() == '.' && self.peek_next().filter(|c| c.is_digit(10)).is_some() {
+        if self.peek() == Some('.') && self.peek_next().filter(|c| c.is_digit(10)).is_some() {
             // Consume the ".".
             self.advance();
 
-            while self.peek().is_digit(10) {
+            while self.peek().filter(|c| c.is_digit(10)).is_some() {
                 self.advance();
             }
         }
@@ -191,14 +202,65 @@ impl<'src> Scanner<'src> {
     }
 
     fn identifier(&mut self) -> Token {
-        while self.peek().is_ascii_alphanumeric() || self.peek() == '_' {
+        while dbg!(self.peek())
+            .filter(|c| c.is_ascii_alphanumeric() || *c == '_')
+            .is_some()
+        {
             self.advance();
         }
         self.make_token(self.identifier_type())
     }
 
     fn identifier_type(&self) -> TokenType {
-        TokenType::Identifier
+        match self.source.as_bytes()[self.start] as char {
+            'a' => self.check_keyword(1, 2, "nd", TokenType::And),
+            'c' => self.check_keyword(1, 4, "lass", TokenType::Class),
+            'e' => self.check_keyword(1, 3, "lse", TokenType::Else),
+            'f' => {
+                if self.current - self.start > 1 {
+                    match self.source.as_bytes()[self.start + 1] as char {
+                        'a' => self.check_keyword(2, 3, "lse", TokenType::False),
+                        'o' => self.check_keyword(2, 1, "r", TokenType::For),
+                        'u' => self.check_keyword(2, 1, "n", TokenType::Fun),
+                        _ => TokenType::Identifier,
+                    }
+                } else {
+                    TokenType::Identifier
+                }
+            }
+            'i' => self.check_keyword(1, 1, "f", TokenType::If),
+            'n' => self.check_keyword(1, 2, "il", TokenType::Nil),
+            'o' => self.check_keyword(1, 1, "r", TokenType::Or),
+            'p' => self.check_keyword(1, 4, "rint", TokenType::Print),
+            'r' => self.check_keyword(1, 5, "eturn", TokenType::Return),
+            's' => self.check_keyword(1, 4, "uper", TokenType::Super),
+            't' => {
+                if self.current - self.start > 1 {
+                    match self.source.as_bytes()[self.start + 1] as char {
+                        'h' => self.check_keyword(2, 2, "is", TokenType::This),
+                        'r' => self.check_keyword(2, 2, "ue", TokenType::True),
+                        _ => TokenType::Identifier,
+                    }
+                } else {
+                    TokenType::Identifier
+                }
+            }
+            'v' => self.check_keyword(1, 2, "ar", TokenType::Var),
+            'w' => self.check_keyword(1, 4, "hile", TokenType::While),
+            _ => TokenType::Identifier,
+        }
+    }
+
+    fn check_keyword(&self, start: usize, length: usize, rest: &str, typ: TokenType) -> TokenType {
+        let start = self.start + start;
+        let end = start + length;
+        if self.current - self.start == start + length
+            && &self.source.as_bytes()[start..end] == rest.as_bytes()
+        {
+            typ
+        } else {
+            TokenType::Identifier
+        }
     }
 
     fn make_token(&self, typ: TokenType) -> Token {
@@ -218,6 +280,46 @@ impl<'src> Scanner<'src> {
     }
 
     fn is_at_end(&self) -> bool {
-        self.current == self.source.len() - 1
+        self.source.is_empty() || self.current == self.source.len() - 1
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn scan_empty_source() {
+        let mut s = Scanner::new("");
+        let tok = s.scan_token();
+        assert_eq!(tok.typ, TokenType::Eof);
+    }
+
+    #[test]
+    fn scan_random_identifier() {
+        let mut s = Scanner::new("bar");
+        let tok = s.scan_token();
+
+        assert_eq!(tok.typ, TokenType::Identifier);
+        assert_eq!(tok.name, "bar");
+    }
+
+    #[test]
+    fn scan_keywords() {
+        let test_cases = vec![
+            ("if", TokenType::If),
+            ("class", TokenType::Class),
+            ("false", TokenType::False),
+            ("true", TokenType::True),
+            ("true_", TokenType::Identifier),
+        ];
+
+        for (source, expected_token_type) in test_cases {
+            let mut s = Scanner::new(source);
+            let tok = s.scan_token();
+
+            assert_eq!(tok.typ, expected_token_type);
+            assert_eq!(tok.name, source);
+        }
     }
 }

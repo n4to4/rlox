@@ -77,6 +77,7 @@ impl VM {
 
     // Stack
 
+    #[allow(dead_code)]
     fn reset_stack(&mut self) {
         self.stack.clear();
     }
