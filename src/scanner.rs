@@ -5,15 +5,15 @@ pub struct Scanner<'src> {
     line: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Token<'src> {
-    typ: TokenType,
-    name: &'src str,
-    line: usize,
+    pub typ: TokenType,
+    pub name: &'src str,
+    pub line: usize,
 }
 
 #[rustfmt::skip]
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TokenType {
     // Single-character tokens.
     LeftParen, RightParen, LeftBrace, RightBrace,
@@ -105,7 +105,7 @@ impl<'src> Scanner<'src> {
         }
     }
 
-    pub fn scan_token(&mut self) -> Token {
+    pub fn scan_token(&mut self) -> Token<'src> {
         self.start = self.current;
         if self.is_at_end() {
             return self.make_token(TokenType::Eof);
@@ -169,7 +169,7 @@ impl<'src> Scanner<'src> {
         self.error_token("Unexpected character.")
     }
 
-    fn string(&mut self) -> Token {
+    fn string(&mut self) -> Token<'src> {
         while let Some(c) = self.peek().filter(|c| *c != '"') {
             if c == '\n' {
                 self.line += 1;
@@ -186,7 +186,7 @@ impl<'src> Scanner<'src> {
         self.make_token(TokenType::String)
     }
 
-    fn number(&mut self) -> Token {
+    fn number(&mut self) -> Token<'src> {
         while self.peek().filter(|c| c.is_digit(10)).is_some() {
             self.advance();
         }
@@ -201,7 +201,7 @@ impl<'src> Scanner<'src> {
         self.make_token(TokenType::Number)
     }
 
-    fn identifier(&mut self) -> Token {
+    fn identifier(&mut self) -> Token<'src> {
         while dbg!(self.peek())
             .filter(|c| c.is_ascii_alphanumeric() || *c == '_')
             .is_some()
@@ -263,7 +263,7 @@ impl<'src> Scanner<'src> {
         }
     }
 
-    fn make_token(&self, typ: TokenType) -> Token {
+    fn make_token(&self, typ: TokenType) -> Token<'src> {
         Token {
             typ,
             name: &self.source[self.start..self.current],
@@ -271,7 +271,7 @@ impl<'src> Scanner<'src> {
         }
     }
 
-    fn error_token(&self, message: &'static str) -> Token {
+    fn error_token(&self, message: &'static str) -> Token<'src> {
         Token {
             typ: TokenType::Error,
             name: message,

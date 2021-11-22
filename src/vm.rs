@@ -29,9 +29,9 @@ impl VM {
 
     pub fn interpret(&mut self, source: &str) -> anyhow::Result<(), InterpretError> {
         let mut chunk = Chunk::new();
-        let mut compiler = Compiler::new();
+        let mut compiler = Compiler::new(source, &mut chunk);
         compiler
-            .compile(source, &mut chunk)
+            .compile()
             .map_err(|_err| InterpretError::CompileError)?;
 
         self.chunk = chunk;
