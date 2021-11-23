@@ -1,9 +1,11 @@
-use crate::chunk::Chunk;
+use crate::chunk::{Chunk, OpCode};
 use crate::scanner::{Scanner, Token, TokenType};
+use crate::value::Value;
 
 pub struct Compiler<'src> {
     parser: Parser<'src>,
     scanner: Scanner<'src>,
+    compiling_chunk: Chunk,
 }
 
 struct Parser<'src> {
@@ -13,12 +15,28 @@ struct Parser<'src> {
     panic_mode: bool,
 }
 
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum Precedence {
+    None = 0,
+    Assignment, // =
+    Or,         // or
+    And,        // and
+    Equality,   // == !=
+    Comparison, // < > <= >=
+    Term,       // + -
+    Factor,     // * /
+    Unary,      // ! -
+    Call,       // . ()
+    Primary,
+}
+
 impl<'src> Compiler<'src> {
     pub fn new(source: &'src str, _chunk: &mut Chunk) -> Self {
-        let mut _scanner = Scanner::new(source);
-        let parser = Parser::new();
-        let scanner = Scanner::new(source);
-        Compiler { parser, scanner }
+        Compiler {
+            parser: Parser::new(),
+            scanner: Scanner::new(source),
+            compiling_chunk: Chunk::new(),
+        }
     }
 
     pub fn compile(&mut self) -> anyhow::Result<()> {
@@ -48,17 +66,102 @@ impl<'src> Compiler<'src> {
         }
     }
 
-    fn expression(&mut self) {}
+    fn expression(&mut self) {
+        self.parse_precedence(Precedence::Assignment);
+    }
 
-    fn consume(&mut self, _typ: TokenType, _message: &str) {}
+    fn number(&mut self) {
+        let tok = self.parser.previous.clone().expect("number");
+        let value: f64 = tok.name.parse().expect("number");
+        self.emit_constant(Value(value));
+    }
+
+    fn grouping(&mut self) {
+        self.expression();
+        self.consume(TokenType::RightParen, "Expect ')' after expression.");
+    }
+
+    fn unary(&mut self) {
+        let tok = self
+            .parser
+            .previous
+            .clone()
+            .expect("parser previous is None");
+
+        // Compile the operand.
+        self.parse_precedence(Precedence::Unary);
+
+        // Emit the operator instruction.
+        match tok.typ {
+            TokenType::Minus => self.emit_byte(OpCode::Negate),
+            _ => unreachable!(),
+        }
+    }
+
+    fn parse_precedence(&mut self, precedence: Precedence) {
+        todo!()
+    }
+
+    fn consume(&mut self, typ: TokenType, message: &str) {
+        if let Some(tok) = &self.parser.current {
+            if tok.typ == typ {
+                self.advance();
+                return;
+            }
+        }
+        self.error_at_current(message);
+    }
+
+    fn emit_byte(&mut self, byte: OpCode) {
+        let line = self.parser.previous.clone().unwrap().line as i32;
+        let chunk = self.current_chunk_mut();
+        chunk.write_chunk(byte, line);
+    }
+
+    fn emit_bytes(&mut self, bytes: &[OpCode]) {
+        for byte in bytes {
+            self.emit_byte(*byte);
+        }
+    }
+
+    fn emit_constant(&mut self, value: Value) {
+        let constant = self.make_constant(value);
+        self.emit_byte(OpCode::Constant(constant));
+    }
+
+    fn make_constant(&mut self, value: Value) -> u8 {
+        let chunk = self.current_chunk_mut();
+        let constant = chunk.add_constant(value);
+        if constant > u8::MAX as usize {
+            self.error("Too many constants in one chunk.");
+            return 0;
+        }
+        constant as u8
+    }
+
+    fn emit_return(&mut self) {
+        self.emit_byte(OpCode::Return);
+    }
+
+    fn current_chunk(&self) -> &Chunk {
+        &self.compiling_chunk
+    }
+
+    fn current_chunk_mut(&mut self) -> &mut Chunk {
+        &mut self.compiling_chunk
+    }
 
     fn error_at_current(&mut self, message: &str) {
-        let token = self.parser.current.clone().unwrap();
+        let token = self.parser.current.clone().expect("parser.current is None");
         self.error_at(token, message);
     }
 
     fn error(&mut self, message: &str) {
-        let token = self.parser.previous.clone().unwrap();
+        let token = self
+            .parser
+            .previous
+            .clone()
+            .expect("parser.previous is None");
         self.error_at(token, message);
     }
 
@@ -78,6 +181,12 @@ impl<'src> Compiler<'src> {
 
         eprintln!(": {}", message);
         self.parser.had_error = true;
+    }
+}
+
+impl<'src> Drop for Compiler<'src> {
+    fn drop(&mut self) {
+        self.emit_return();
     }
 }
 
