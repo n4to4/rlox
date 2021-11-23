@@ -15,7 +15,7 @@ struct Parser<'src> {
     panic_mode: bool,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum Precedence {
     None = 0,
     Assignment, // =
@@ -29,6 +29,14 @@ enum Precedence {
     Call,       // . ()
     Primary,
 }
+
+struct ParseRule {
+    prefix: ParseFn,
+    infix: ParseFn,
+    precedence: Precedence,
+}
+
+type ParseFn = fn();
 
 impl<'src> Compiler<'src> {
     pub fn new(source: &'src str, _chunk: &mut Chunk) -> Self {
@@ -94,6 +102,20 @@ impl<'src> Compiler<'src> {
         // Emit the operator instruction.
         match tok.typ {
             TokenType::Minus => self.emit_byte(OpCode::Negate),
+            _ => unreachable!(),
+        }
+    }
+
+    fn binary(&mut self) {
+        let tok = self.parser.previous.clone().unwrap();
+        //let rule = self.get_rule(tok.typ);
+        //self.parse_precedence(rule.precedence + 1);
+
+        match tok.typ {
+            TokenType::Plus => self.emit_byte(OpCode::Add),
+            TokenType::Minus => self.emit_byte(OpCode::Subtract),
+            TokenType::Star => self.emit_byte(OpCode::Multiply),
+            TokenType::Slash => self.emit_byte(OpCode::Divide),
             _ => unreachable!(),
         }
     }
