@@ -16,7 +16,7 @@ pub struct Token<'src> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TokenType {
     // Single-character tokens.
-    LeftParen, RightParen, LeftBrace, RightBrace,
+    LeftParen = 0, RightParen, LeftBrace, RightBrace,
     Comma, Dot, Minus, Plus, Semicolon, Slash, Star,
     // One or two character tokens.
     Bang, BangEqual, Equal, EqualEqual,

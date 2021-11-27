@@ -1,6 +1,9 @@
+#![allow(dead_code)]
+
 use crate::chunk::{Chunk, OpCode};
 use crate::scanner::{Scanner, Token, TokenType};
 use crate::value::Value;
+use once_cell::sync::Lazy;
 
 pub struct Compiler<'src> {
     parser: Parser<'src>,
@@ -30,13 +33,48 @@ enum Precedence {
     Primary,
 }
 
+#[derive(Debug, Clone)]
 struct ParseRule {
-    prefix: ParseFn,
-    infix: ParseFn,
+    prefix: Option<ParseFn>,
+    infix: Option<ParseFn>,
     precedence: Precedence,
 }
 
+impl Default for ParseRule {
+    fn default() -> Self {
+        ParseRule {
+            prefix: None,
+            infix: None,
+            precedence: Precedence::None,
+        }
+    }
+}
+
 type ParseFn = fn();
+
+static RULES: Lazy<Vec<ParseRule>> = Lazy::new(|| {
+    let mut rules = vec![ParseRule::default(); TokenType::Eof as usize];
+
+    macro_rules! rules {
+        ($({ $tok:ident, { $pre:expr, $inf:expr, $prec:expr } }),* $(,)?) => {
+            $(
+                rules[$tok as usize] = ParseRule {
+                    prefix: $pre,
+                    infix: $inf,
+                    precedence: $prec,
+                };
+            )*
+        };
+    }
+
+    use TokenType::*;
+    rules! {
+        { LeftParen, { None, None, Precedence::None } },
+        { LeftParen, { None, None, Precedence::None } },
+    };
+
+    rules
+});
 
 impl<'src> Compiler<'src> {
     pub fn new(source: &'src str, _chunk: &mut Chunk) -> Self {
