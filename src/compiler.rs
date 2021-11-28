@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::chunk::{Chunk, OpCode};
 use crate::common::DEBUG_PRINT_CODE;
 use crate::scanner::{Scanner, Token, TokenType};
@@ -8,7 +6,7 @@ use crate::value::Value;
 pub struct Compiler<'src> {
     parser: Parser<'src>,
     scanner: Scanner<'src>,
-    pub compiling_chunk: Chunk,
+    compiling_chunk: &'src mut Chunk,
     parse_rule_table: ParseRuleTable<'src>,
 }
 
@@ -140,11 +138,11 @@ impl<'src> ParseRuleTable<'src> {
 }
 
 impl<'src> Compiler<'src> {
-    pub fn new(source: &'src str) -> Self {
+    pub fn new(source: &'src str, chunk: &'src mut Chunk) -> Self {
         Compiler {
             parser: Parser::new(),
             scanner: Scanner::new(source),
-            compiling_chunk: Chunk::new(),
+            compiling_chunk: chunk,
             parse_rule_table: ParseRuleTable::new(),
         }
     }
@@ -279,12 +277,6 @@ impl<'src> Compiler<'src> {
         chunk.write_chunk(byte, line);
     }
 
-    fn emit_bytes(&mut self, bytes: &[OpCode]) {
-        for byte in bytes {
-            self.emit_byte(*byte);
-        }
-    }
-
     fn emit_constant(&mut self, value: Value) {
         let constant = self.make_constant(value);
         self.emit_byte(OpCode::Constant(constant));
@@ -305,7 +297,7 @@ impl<'src> Compiler<'src> {
     }
 
     fn current_chunk(&self) -> &Chunk {
-        &self.compiling_chunk
+        self.compiling_chunk
     }
 
     fn current_chunk_mut(&mut self) -> &mut Chunk {

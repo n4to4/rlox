@@ -27,12 +27,13 @@ impl VM {
     }
 
     pub fn interpret(&mut self, source: &str) -> anyhow::Result<(), InterpretError> {
-        let mut compiler = Compiler::new(source);
+        let mut chunk = Chunk::new();
+        let mut compiler = Compiler::new(source, &mut chunk);
         compiler
             .compile()
             .map_err(|_err| InterpretError::CompileError)?;
 
-        let chunk = compiler.compiling_chunk.clone();
+        let chunk = chunk;
         self.chunk = chunk;
         self.ip = 0;
 
