@@ -205,7 +205,35 @@ impl<'src> Compiler<'src> {
     }
 
     fn parse_precedence(&mut self, precedence: Precedence) {
-        todo!()
+        self.advance();
+
+        let rule = self.get_rule(self.parser.previous.clone().unwrap().typ);
+        if let Some(prefix_rule) = rule.prefix {
+            prefix_rule(self);
+        } else {
+            self.error("Expect expression.");
+            return;
+        }
+
+        loop {
+            let rule = self.get_rule(self.parser.current.clone().unwrap().typ);
+            if precedence > rule.precedence {
+                break;
+            }
+            self.advance();
+            let rule = self.get_rule(self.parser.previous.clone().unwrap().typ);
+            if let Some(infix) = rule.infix {
+                infix(self);
+            }
+        }
+    }
+
+    fn get_rule(&self, typ: TokenType) -> ParseRule<'src> {
+        self.parse_rule_table
+            .table
+            .get(typ as usize)
+            .expect("get_rule")
+            .clone()
     }
 
     fn consume(&mut self, typ: TokenType, message: &str) {
