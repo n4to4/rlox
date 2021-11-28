@@ -60,7 +60,7 @@ struct ParseRule<'src> {
 type ParseFn<'src> = fn(&mut Compiler<'src>);
 
 struct ParseRuleTable<'src> {
-    table: Vec<ParseRule<'src>>,
+    rules: Vec<ParseRule<'src>>,
 }
 
 impl<'src> Default for ParseRule<'src> {
@@ -78,12 +78,12 @@ impl<'src> ParseRuleTable<'src> {
         let mut rules = vec![ParseRule::default(); TokenType::Eof as usize + 1];
 
         macro_rules! rules {
-            ($({ $tok:ident, { $pre:expr, $inf:expr, $prec:expr } }),* $(,)?) => {
+            ($({ $tok:ident, { $prefix:expr, $infix:expr, $precedence:expr } }),* $(,)?) => {
                 $(
                     rules[$tok as usize] = ParseRule {
-                        prefix: $pre,
-                        infix: $inf,
-                        precedence: $prec,
+                        prefix: $prefix,
+                        infix: $infix,
+                        precedence: $precedence,
                     };
                 )*
             };
@@ -133,7 +133,7 @@ impl<'src> ParseRuleTable<'src> {
             { Eof,          { None, None, Precedence::None } },
         };
 
-        ParseRuleTable { table: rules }
+        ParseRuleTable { rules }
     }
 }
 
@@ -255,7 +255,7 @@ impl<'src> Compiler<'src> {
 
     fn get_rule(&self, typ: TokenType) -> ParseRule<'src> {
         self.parse_rule_table
-            .table
+            .rules
             .get(typ as usize)
             .expect("get_rule")
             .clone()
