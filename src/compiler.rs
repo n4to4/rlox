@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use crate::chunk::{Chunk, OpCode};
+use crate::common::DEBUG_PRINT_CODE;
 use crate::scanner::{Scanner, Token, TokenType};
 use crate::value::Value;
 
@@ -222,8 +223,8 @@ impl<'src> Compiler<'src> {
             }
             self.advance();
             let rule = self.get_rule(self.parser.previous.clone().unwrap().typ);
-            if let Some(infix) = rule.infix {
-                infix(self);
+            if let Some(infix_rule) = rule.infix {
+                infix_rule(self);
             }
         }
     }
@@ -321,6 +322,11 @@ impl<'src> Compiler<'src> {
 impl<'src> Drop for Compiler<'src> {
     fn drop(&mut self) {
         self.emit_return();
+
+        if DEBUG_PRINT_CODE {
+            let chunk = self.current_chunk();
+            chunk.disassemble("code")
+        }
     }
 }
 

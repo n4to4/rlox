@@ -1,8 +1,7 @@
 use crate::chunk::{disassemble_instruction, Chunk, OpCode};
+use crate::common::DEBUG_TRACE_EXECUTION;
 use crate::compiler::Compiler;
 use crate::value::Value;
-
-const DEBUG_TRACE_EXECUTION: bool = true;
 
 pub struct VM {
     chunk: Chunk,
