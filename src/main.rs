@@ -16,8 +16,8 @@ fn main() -> anyhow::Result<()> {
 fn repl() -> std::io::Result<()> {
     let mut vm = VM::new();
     let stdin = std::io::stdin();
-    let mut line = String::new();
     let mut handle = stdin.lock();
+    let mut line = String::new();
 
     loop {
         print!("> ");
