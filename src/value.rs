@@ -3,7 +3,7 @@ use std::ops::Index;
 #[derive(Debug, Clone, Copy)]
 pub struct Value(pub f64);
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ValueArray {
     pub values: Vec<Value>,
 }

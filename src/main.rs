@@ -1,5 +1,5 @@
 use rlox::vm::VM;
-use std::io::BufRead;
+use std::io::{BufRead, Write};
 
 fn main() -> anyhow::Result<()> {
     let mut it = std::env::args();
@@ -21,6 +21,9 @@ fn repl() -> std::io::Result<()> {
 
     loop {
         print!("> ");
+        let _ = std::io::stdout().flush();
+        line.clear();
+
         let n = handle.read_line(&mut line)?;
         if n == 0 || line.trim().is_empty() {
             return Ok(());

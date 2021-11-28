@@ -11,7 +11,7 @@ pub enum OpCode {
     Return,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Chunk {
     pub code: Vec<OpCode>,
     pub lines: Vec<i32>,
@@ -48,6 +48,7 @@ impl Chunk {
 
 pub fn disassemble_instruction(chunk: &Chunk, offset: usize) {
     print!("{:04} ", offset);
+
     if offset > 0 && chunk.lines[offset] == chunk.lines[offset - 1] {
         print!("   | ");
     } else {

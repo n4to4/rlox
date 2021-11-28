@@ -27,12 +27,12 @@ impl VM {
     }
 
     pub fn interpret(&mut self, source: &str) -> anyhow::Result<(), InterpretError> {
-        let mut chunk = Chunk::new();
-        let mut compiler = Compiler::new(source, &mut chunk);
+        let mut compiler = Compiler::new(source);
         compiler
             .compile()
             .map_err(|_err| InterpretError::CompileError)?;
 
+        let chunk = compiler.compiling_chunk.clone();
         self.chunk = chunk;
         self.ip = 0;
 
@@ -43,7 +43,6 @@ impl VM {
         loop {
             if DEBUG_TRACE_EXECUTION {
                 disassemble_instruction(&self.chunk, self.ip);
-                dbg!(&self.stack);
             }
 
             match self.chunk.code[self.ip] {

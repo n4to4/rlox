@@ -8,7 +8,7 @@ use crate::value::Value;
 pub struct Compiler<'src> {
     parser: Parser<'src>,
     scanner: Scanner<'src>,
-    compiling_chunk: Chunk,
+    pub compiling_chunk: Chunk,
     parse_rule_table: ParseRuleTable<'src>,
 }
 
@@ -32,6 +32,24 @@ enum Precedence {
     Unary,      // ! -
     Call,       // . ()
     Primary,
+}
+
+impl Precedence {
+    fn next(&self) -> Self {
+        match *self {
+            Self::None => Self::Assignment,
+            Self::Assignment => Self::Or,
+            Self::Or => Self::And,
+            Self::And => Self::Equality,
+            Self::Equality => Self::Comparison,
+            Self::Comparison => Self::Term,
+            Self::Term => Self::Factor,
+            Self::Factor => Self::Unary,
+            Self::Unary => Self::Call,
+            Self::Call => Self::Primary,
+            Self::Primary => Self::Primary,
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -59,7 +77,7 @@ impl<'src> Default for ParseRule<'src> {
 
 impl<'src> ParseRuleTable<'src> {
     fn new() -> Self {
-        let mut rules = vec![ParseRule::default(); TokenType::Eof as usize];
+        let mut rules = vec![ParseRule::default(); TokenType::Eof as usize + 1];
 
         macro_rules! rules {
             ($({ $tok:ident, { $pre:expr, $inf:expr, $prec:expr } }),* $(,)?) => {
@@ -76,7 +94,6 @@ impl<'src> ParseRuleTable<'src> {
         use TokenType::*;
         rules! {
             { LeftParen,    { Some(Compiler::grouping), None, Precedence::None } },
-            { LeftParen,    { None, None, Precedence::None } },
             { RightParen,   { None, None, Precedence::None } },
             { LeftBrace,    { None, None, Precedence::None } },
             { RightBrace,   { None, None, Precedence::None } },
@@ -123,7 +140,7 @@ impl<'src> ParseRuleTable<'src> {
 }
 
 impl<'src> Compiler<'src> {
-    pub fn new(source: &'src str, _chunk: &mut Chunk) -> Self {
+    pub fn new(source: &'src str) -> Self {
         Compiler {
             parser: Parser::new(),
             scanner: Scanner::new(source),
@@ -136,11 +153,20 @@ impl<'src> Compiler<'src> {
         self.advance();
         self.expression();
         self.consume(TokenType::Eof, "Expect end of expression.");
+        self.end_compiler();
 
         if self.parser.had_error {
             anyhow::bail!("parse error");
         }
         Ok(())
+    }
+
+    fn end_compiler(&mut self) {
+        self.emit_return();
+        if DEBUG_PRINT_CODE && !self.parser.had_error {
+            let chunk = self.current_chunk();
+            chunk.disassemble("code");
+        }
     }
 
     fn advance(&mut self) {
@@ -193,8 +219,8 @@ impl<'src> Compiler<'src> {
 
     fn binary(&mut self) {
         let tok = self.parser.previous.clone().unwrap();
-        //let rule = self.get_rule(tok.typ);
-        //self.parse_precedence(rule.precedence + 1);
+        let rule = self.get_rule(tok.typ);
+        self.parse_precedence(rule.precedence.next());
 
         match tok.typ {
             TokenType::Plus => self.emit_byte(OpCode::Add),
@@ -316,17 +342,6 @@ impl<'src> Compiler<'src> {
 
         eprintln!(": {}", message);
         self.parser.had_error = true;
-    }
-}
-
-impl<'src> Drop for Compiler<'src> {
-    fn drop(&mut self) {
-        self.emit_return();
-
-        if DEBUG_PRINT_CODE {
-            let chunk = self.current_chunk();
-            chunk.disassemble("code")
-        }
     }
 }
 
