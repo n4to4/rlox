@@ -3,12 +3,12 @@
 use crate::chunk::{Chunk, OpCode};
 use crate::scanner::{Scanner, Token, TokenType};
 use crate::value::Value;
-use once_cell::sync::Lazy;
 
 pub struct Compiler<'src> {
     parser: Parser<'src>,
     scanner: Scanner<'src>,
     compiling_chunk: Chunk,
+    parse_rule_table: ParseRuleTable<'src>,
 }
 
 struct Parser<'src> {
@@ -33,14 +33,20 @@ enum Precedence {
     Primary,
 }
 
-#[derive(Debug, Clone)]
-struct ParseRule {
-    prefix: Option<ParseFn>,
-    infix: Option<ParseFn>,
+#[derive(Clone)]
+struct ParseRule<'src> {
+    prefix: Option<ParseFn<'src>>,
+    infix: Option<ParseFn<'src>>,
     precedence: Precedence,
 }
 
-impl Default for ParseRule {
+type ParseFn<'src> = fn(&mut Compiler<'src>);
+
+struct ParseRuleTable<'src> {
+    table: Vec<ParseRule<'src>>,
+}
+
+impl<'src> Default for ParseRule<'src> {
     fn default() -> Self {
         ParseRule {
             prefix: None,
@@ -50,31 +56,70 @@ impl Default for ParseRule {
     }
 }
 
-type ParseFn = fn();
+impl<'src> ParseRuleTable<'src> {
+    fn new() -> Self {
+        let mut rules = vec![ParseRule::default(); TokenType::Eof as usize];
 
-static RULES: Lazy<Vec<ParseRule>> = Lazy::new(|| {
-    let mut rules = vec![ParseRule::default(); TokenType::Eof as usize];
+        macro_rules! rules {
+            ($({ $tok:ident, { $pre:expr, $inf:expr, $prec:expr } }),* $(,)?) => {
+                $(
+                    rules[$tok as usize] = ParseRule {
+                        prefix: $pre,
+                        infix: $inf,
+                        precedence: $prec,
+                    };
+                )*
+            };
+        }
 
-    macro_rules! rules {
-        ($({ $tok:ident, { $pre:expr, $inf:expr, $prec:expr } }),* $(,)?) => {
-            $(
-                rules[$tok as usize] = ParseRule {
-                    prefix: $pre,
-                    infix: $inf,
-                    precedence: $prec,
-                };
-            )*
+        use TokenType::*;
+        rules! {
+            { LeftParen, { Some(Compiler::grouping), None, Precedence::None } },
+            { LeftParen, { None, None, Precedence::None } },
+            { RightParen, { None, None, Precedence::None } },
+            { LeftBrace, { None, None, Precedence::None } },
+            { RightBrace, { None, None, Precedence::None } },
+            { Comma, { None, None, Precedence::None } },
+            { Dot, { None, None, Precedence::None } },
+            { Minus, { None, None, Precedence::None } },
+            { Plus, { None, None, Precedence::None } },
+            { Semicolon, { None, None, Precedence::None } },
+            { Slash, { None, None, Precedence::None } },
+            { Star, { None, None, Precedence::None } },
+            { Bang, { None, None, Precedence::None } },
+            { BangEqual, { None, None, Precedence::None } },
+            { Equal, { None, None, Precedence::None } },
+            { EqualEqual, { None, None, Precedence::None } },
+            { Greater, { None, None, Precedence::None } },
+            { GreaterEqual, { None, None, Precedence::None } },
+            { Less, { None, None, Precedence::None } },
+            { LessEqual, { None, None, Precedence::None } },
+            { Identifier, { None, None, Precedence::None } },
+            { String, { None, None, Precedence::None } },
+            { Number, { None, None, Precedence::None } },
+            { And, { None, None, Precedence::None } },
+            { Class, { None, None, Precedence::None } },
+            { Else, { None, None, Precedence::None } },
+            { False, { None, None, Precedence::None } },
+            { For, { None, None, Precedence::None } },
+            { Fun, { None, None, Precedence::None } },
+            { If, { None, None, Precedence::None } },
+            { Nil, { None, None, Precedence::None } },
+            { Or, { None, None, Precedence::None } },
+            { Print, { None, None, Precedence::None } },
+            { Return, { None, None, Precedence::None } },
+            { Super, { None, None, Precedence::None } },
+            { This, { None, None, Precedence::None } },
+            { True, { None, None, Precedence::None } },
+            { Var, { None, None, Precedence::None } },
+            { While, { None, None, Precedence::None } },
+            { Error, { None, None, Precedence::None } },
+            { Eof, { None, None, Precedence::None } },
         };
+
+        ParseRuleTable { table: rules }
     }
-
-    use TokenType::*;
-    rules! {
-        { LeftParen, { None, None, Precedence::None } },
-        { LeftParen, { None, None, Precedence::None } },
-    };
-
-    rules
-});
+}
 
 impl<'src> Compiler<'src> {
     pub fn new(source: &'src str, _chunk: &mut Chunk) -> Self {
@@ -82,6 +127,7 @@ impl<'src> Compiler<'src> {
             parser: Parser::new(),
             scanner: Scanner::new(source),
             compiling_chunk: Chunk::new(),
+            parse_rule_table: ParseRuleTable::new(),
         }
     }
 
