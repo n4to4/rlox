@@ -1,7 +1,11 @@
 use std::ops::Index;
 
 #[derive(Debug, Clone, Copy)]
-pub struct Value(pub f64);
+pub enum Value {
+    Boolean(bool),
+    Number(f64),
+    Nil,
+}
 
 #[derive(Debug, Clone)]
 pub struct ValueArray {
@@ -24,7 +28,10 @@ impl ValueArray {
 
 impl std::fmt::Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
+        match self {
+            Self::Number(number) => write!(f, "{}", number),
+            _ => todo!("not implemented yet"),
+        }
     }
 }
 

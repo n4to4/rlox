@@ -52,20 +52,29 @@ impl VM {
                     self.push(constant);
                 }
                 op @ (OpCode::Add | OpCode::Subtract | OpCode::Multiply | OpCode::Divide) => {
-                    let b = self.pop().expect("empty stack");
-                    let a = self.pop().expect("empty stack");
+                    let b = match self.pop().expect("empty stack") {
+                        Value::Number(number) => number,
+                        _ => todo!("not implemented yet"),
+                    };
+                    let a = match self.pop().expect("empty stack") {
+                        Value::Number(number) => number,
+                        _ => todo!("not implemented yet"),
+                    };
                     let ret = match op {
-                        OpCode::Add => a.0 + b.0,
-                        OpCode::Subtract => a.0 - b.0,
-                        OpCode::Multiply => a.0 * b.0,
-                        OpCode::Divide => a.0 / b.0,
+                        OpCode::Add => a + b,
+                        OpCode::Subtract => a - b,
+                        OpCode::Multiply => a * b,
+                        OpCode::Divide => a / b,
                         _ => unreachable!(),
                     };
-                    self.push(Value(ret));
+                    self.push(Value::Number(ret));
                 }
                 OpCode::Negate => {
-                    let v = self.pop().expect("empty stack");
-                    self.push(Value(-v.0));
+                    let v = match self.pop().expect("empty stack") {
+                        Value::Number(number) => number,
+                        _ => todo!("not implemented yet"),
+                    };
+                    self.push(Value::Number(-v));
                 }
                 OpCode::Return => {
                     if let Some(value) = self.pop() {

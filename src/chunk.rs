@@ -56,7 +56,7 @@ pub fn disassemble_instruction(chunk: &Chunk, offset: usize) {
     }
     match chunk.code[offset] {
         OpCode::Constant(off) => {
-            println!("Constant {}", chunk.constants[off].0);
+            println!("Constant {}", chunk.constants[off]);
         }
         _ => println!("{:?}", &chunk.code[offset]),
     }

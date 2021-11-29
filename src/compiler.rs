@@ -190,7 +190,7 @@ impl<'src> Compiler<'src> {
     fn number(&mut self) {
         let tok = self.parser.previous.clone().expect("number");
         let value: f64 = tok.name.parse().expect("number");
-        self.emit_constant(Value(value));
+        self.emit_constant(Value::Number(value));
     }
 
     fn grouping(&mut self) {
