@@ -202,7 +202,8 @@ impl<'src> Scanner<'src> {
     }
 
     fn identifier(&mut self) -> Token<'src> {
-        while dbg!(self.peek())
+        while self
+            .peek()
             .filter(|c| c.is_ascii_alphanumeric() || *c == '_')
             .is_some()
         {

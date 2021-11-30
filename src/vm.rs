@@ -54,11 +54,17 @@ impl VM {
                 op @ (OpCode::Add | OpCode::Subtract | OpCode::Multiply | OpCode::Divide) => {
                     let b = match self.pop().expect("empty stack") {
                         Value::Number(number) => number,
-                        _ => todo!("not implemented yet"),
+                        _ => {
+                            self.runtime_error("Operands must be numbers.");
+                            return Err(InterpretError::RuntimeError);
+                        }
                     };
                     let a = match self.pop().expect("empty stack") {
                         Value::Number(number) => number,
-                        _ => todo!("not implemented yet"),
+                        _ => {
+                            self.runtime_error("Operands must be numbers.");
+                            return Err(InterpretError::RuntimeError);
+                        }
                     };
                     let ret = match op {
                         OpCode::Add => a + b,
@@ -72,7 +78,10 @@ impl VM {
                 OpCode::Negate => {
                     let v = match self.pop().expect("empty stack") {
                         Value::Number(number) => number,
-                        _ => todo!("not implemented yet"),
+                        _ => {
+                            self.runtime_error("Operand must be a number.");
+                            return Err(InterpretError::RuntimeError);
+                        }
                     };
                     self.push(Value::Number(-v));
                 }
@@ -93,7 +102,6 @@ impl VM {
 
     // Stack
 
-    #[allow(dead_code)]
     fn reset_stack(&mut self) {
         self.stack.clear();
     }
@@ -104,5 +112,23 @@ impl VM {
 
     fn pop(&mut self) -> Option<Value> {
         self.stack.pop()
+    }
+
+    fn peek(&self, distance: usize) -> Option<Value> {
+        let offset = 1 + distance;
+        if offset <= self.stack.len() {
+            Some(self.stack[self.stack.len() - offset])
+        } else {
+            None
+        }
+    }
+
+    // Error
+
+    fn runtime_error(&mut self, message: &str) {
+        eprintln!("{}", message);
+        let line = self.chunk.lines[self.ip];
+        eprintln!("[line {}] in script", line);
+        self.reset_stack();
     }
 }
