@@ -301,7 +301,7 @@ impl<'src> Compiler<'src> {
     }
 
     fn current_chunk_mut(&mut self) -> &mut Chunk {
-        &mut self.compiling_chunk
+        self.compiling_chunk
     }
 
     fn error_at_current(&mut self, message: &str) {
