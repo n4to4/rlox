@@ -3,6 +3,9 @@ use crate::value::{Value, ValueArray};
 #[derive(Debug, Clone, Copy)]
 pub enum OpCode {
     Constant(u8),
+    Nil,
+    True,
+    False,
     Add,
     Subtract,
     Multiply,

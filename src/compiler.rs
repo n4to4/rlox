@@ -116,17 +116,17 @@ impl<'src> ParseRuleTable<'src> {
             { And,          { None, None, Precedence::None } },
             { Class,        { None, None, Precedence::None } },
             { Else,         { None, None, Precedence::None } },
-            { False,        { None, None, Precedence::None } },
+            { False,        { Some(Compiler::literal), None, Precedence::None } },
             { For,          { None, None, Precedence::None } },
             { Fun,          { None, None, Precedence::None } },
             { If,           { None, None, Precedence::None } },
-            { Nil,          { None, None, Precedence::None } },
+            { Nil,          { Some(Compiler::literal), None, Precedence::None } },
             { Or,           { None, None, Precedence::None } },
             { Print,        { None, None, Precedence::None } },
             { Return,       { None, None, Precedence::None } },
             { Super,        { None, None, Precedence::None } },
             { This,         { None, None, Precedence::None } },
-            { True,         { None, None, Precedence::None } },
+            { True,         { Some(Compiler::literal), None, Precedence::None } },
             { Var,          { None, None, Precedence::None } },
             { While,        { None, None, Precedence::None } },
             { Error,        { None, None, Precedence::None } },
@@ -225,6 +225,15 @@ impl<'src> Compiler<'src> {
             TokenType::Minus => self.emit_byte(OpCode::Subtract),
             TokenType::Star => self.emit_byte(OpCode::Multiply),
             TokenType::Slash => self.emit_byte(OpCode::Divide),
+            _ => unreachable!(),
+        }
+    }
+
+    fn literal(&mut self) {
+        match self.parser.previous.clone().unwrap().typ {
+            TokenType::False => self.emit_byte(OpCode::False),
+            TokenType::Nil => self.emit_byte(OpCode::Nil),
+            TokenType::True => self.emit_byte(OpCode::True),
             _ => unreachable!(),
         }
     }

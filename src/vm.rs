@@ -46,12 +46,16 @@ impl VM {
                 disassemble_instruction(&self.chunk, self.ip);
             }
 
-            match self.chunk.code[self.ip] {
+            let op = self.chunk.code[self.ip];
+            match op {
                 OpCode::Constant(idx) => {
                     let constant = self.read_const(idx as usize);
                     self.push(constant);
                 }
-                op @ (OpCode::Add | OpCode::Subtract | OpCode::Multiply | OpCode::Divide) => {
+                OpCode::Nil => println!("{:?}", op),
+                OpCode::True => println!("{:?}", op),
+                OpCode::False => println!("{:?}", op),
+                OpCode::Add | OpCode::Subtract | OpCode::Multiply | OpCode::Divide => {
                     let b = match self.pop().expect("empty stack") {
                         Value::Number(number) => number,
                         _ => {
