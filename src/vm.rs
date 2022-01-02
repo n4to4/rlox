@@ -41,6 +41,8 @@ impl VM {
     }
 
     pub fn run(&mut self) -> Result<(), InterpretError> {
+        dbg!(&self.chunk);
+
         loop {
             if DEBUG_TRACE_EXECUTION {
                 disassemble_instruction(&self.chunk, self.ip);
@@ -52,9 +54,9 @@ impl VM {
                     let constant = self.read_const(idx as usize);
                     self.push(constant);
                 }
-                OpCode::Nil => println!("{:?}", op),
-                OpCode::True => println!("{:?}", op),
-                OpCode::False => println!("{:?}", op),
+                OpCode::Nil => self.push(Value::Nil),
+                OpCode::True => self.push(Value::Boolean(true)),
+                OpCode::False => self.push(Value::Boolean(false)),
                 OpCode::Add | OpCode::Subtract | OpCode::Multiply | OpCode::Divide => {
                     let b = match self.pop().expect("empty stack") {
                         Value::Number(number) => number,
@@ -79,6 +81,10 @@ impl VM {
                     };
                     self.push(Value::Number(ret));
                 }
+                OpCode::Not => match self.pop().expect("empty stack") {
+                    Value::Boolean(b) => self.push(Value::Boolean(!b)),
+                    _ => self.runtime_error("Expect boolean"),
+                },
                 OpCode::Negate => {
                     let v = match self.pop().expect("empty stack") {
                         Value::Number(number) => number,

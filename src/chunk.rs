@@ -10,6 +10,7 @@ pub enum OpCode {
     Subtract,
     Multiply,
     Divide,
+    Not,
     Negate,
     Return,
 }

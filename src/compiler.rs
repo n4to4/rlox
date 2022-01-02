@@ -52,7 +52,9 @@ impl Precedence {
 
 #[derive(Clone)]
 struct ParseRule<'src> {
+    prefix_name: &'static str,
     prefix: Option<ParseFn<'src>>,
+    infix_name: &'static str,
     infix: Option<ParseFn<'src>>,
     precedence: Precedence,
 }
@@ -66,10 +68,26 @@ struct ParseRuleTable<'src> {
 impl<'src> Default for ParseRule<'src> {
     fn default() -> Self {
         ParseRule {
+            prefix_name: "",
             prefix: None,
+            infix_name: "",
             infix: None,
             precedence: Precedence::None,
         }
+    }
+}
+
+impl<'src> std::fmt::Debug for ParseRule<'src> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        //f.debug_struct("ParseRule")
+        //    .field("prefix", self.prefix_name)
+        //    .field("precedence", &self.precedence)
+        //    .finish()
+        write!(
+            f,
+            "<ParseRule prefix:{}, infix:{}, precedence:{:?}>",
+            self.prefix_name, self.infix_name, &self.precedence
+        )
     }
 }
 
@@ -81,7 +99,9 @@ impl<'src> ParseRuleTable<'src> {
             ($({ $tok:ident, { $prefix:expr, $infix:expr, $precedence:expr } }),* $(,)?) => {
                 $(
                     rules[$tok as usize] = ParseRule {
+                        prefix_name: stringify!($prefix),
                         prefix: $prefix,
+                        infix_name: stringify!($infix),
                         infix: $infix,
                         precedence: $precedence,
                     };
@@ -102,7 +122,7 @@ impl<'src> ParseRuleTable<'src> {
             { Semicolon,    { None, None, Precedence::None } },
             { Slash,        { None, Some(Compiler::binary), Precedence::Factor } },
             { Star,         { None, Some(Compiler::binary), Precedence::Factor } },
-            { Bang,         { None, None, Precedence::None } },
+            { Bang,         { Some(Compiler::unary), None, Precedence::None } },
             { BangEqual,    { None, None, Precedence::None } },
             { Equal,        { None, None, Precedence::None } },
             { EqualEqual,   { None, None, Precedence::None } },
@@ -170,7 +190,7 @@ impl<'src> Compiler<'src> {
     fn advance(&mut self) {
         self.parser.previous = self.parser.current.take();
         loop {
-            let token = self.scanner.scan_token();
+            let token = dbg!(self.scanner.scan_token());
             let typ = token.typ;
             let message = token.name;
             self.parser.current = Some(token);
@@ -210,6 +230,7 @@ impl<'src> Compiler<'src> {
 
         // Emit the operator instruction.
         match tok.typ {
+            TokenType::Bang => self.emit_byte(OpCode::Not),
             TokenType::Minus => self.emit_byte(OpCode::Negate),
             _ => unreachable!(),
         }
@@ -242,6 +263,7 @@ impl<'src> Compiler<'src> {
         self.advance();
 
         let rule = self.get_rule(self.parser.previous.clone().unwrap().typ);
+        dbg!(&rule);
         if let Some(prefix_rule) = rule.prefix {
             prefix_rule(self);
         } else {
