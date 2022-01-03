@@ -124,6 +124,7 @@ impl VM {
         self.stack.pop()
     }
 
+    #[allow(dead_code)]
     fn peek(&self, distance: usize) -> Option<Value> {
         let offset = 1 + distance;
         if offset <= self.stack.len() {

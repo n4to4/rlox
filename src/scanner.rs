@@ -253,10 +253,10 @@ impl<'src> Scanner<'src> {
     }
 
     fn check_keyword(&self, start: usize, length: usize, rest: &str, typ: TokenType) -> TokenType {
-        let start = self.start + start;
-        let end = start + length;
+        let s = self.start + start;
+        let e = s + length;
         if self.current - self.start == start + length
-            && &self.source.as_bytes()[start..end] == rest.as_bytes()
+            && &self.source.as_bytes()[s..e] == rest.as_bytes()
         {
             typ
         } else {
