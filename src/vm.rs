@@ -81,10 +81,10 @@ impl VM {
                     };
                     self.push(Value::Number(ret));
                 }
-                OpCode::Not => match self.pop().expect("empty stack") {
-                    Value::Boolean(b) => self.push(Value::Boolean(!b)),
-                    _ => self.runtime_error("Expect boolean"),
-                },
+                OpCode::Not => {
+                    let val = self.pop().expect("empty stack");
+                    self.push(Value::Boolean(is_falsey(val)));
+                }
                 OpCode::Negate => {
                     let v = match self.pop().expect("empty stack") {
                         Value::Number(number) => number,
@@ -142,4 +142,8 @@ impl VM {
         eprintln!("[line {}] in script", line);
         self.reset_stack();
     }
+}
+
+fn is_falsey(value: Value) -> bool {
+    matches!(value, Value::Nil | Value::Boolean(false))
 }
