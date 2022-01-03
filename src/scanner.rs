@@ -253,10 +253,9 @@ impl<'src> Scanner<'src> {
     }
 
     fn check_keyword(&self, start: usize, length: usize, rest: &str, typ: TokenType) -> TokenType {
-        let s = self.start + start;
-        let e = s + length;
+        let offset = self.start + start;
         if self.current - self.start == start + length
-            && &self.source.as_bytes()[s..e] == rest.as_bytes()
+            && &self.source.as_bytes()[offset..offset + length] == rest.as_bytes()
         {
             typ
         } else {
@@ -322,5 +321,15 @@ mod tests {
             assert_eq!(tok.typ, expected_token_type);
             assert_eq!(tok.name, source);
         }
+    }
+
+    #[test]
+    fn scan_token_bug_regression() {
+        let mut s = Scanner::new("!true");
+        let bang = s.scan_token();
+        let true_ = s.scan_token();
+
+        assert_eq!(bang.typ, TokenType::Bang);
+        assert_eq!(true_.typ, TokenType::True);
     }
 }
