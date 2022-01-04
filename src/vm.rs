@@ -57,7 +57,17 @@ impl VM {
                 OpCode::Nil => self.push(Value::Nil),
                 OpCode::True => self.push(Value::Boolean(true)),
                 OpCode::False => self.push(Value::Boolean(false)),
-                OpCode::Add | OpCode::Subtract | OpCode::Multiply | OpCode::Divide => {
+                OpCode::Equal => {
+                    let a = self.pop().expect("empty stack");
+                    let b = self.pop().expect("empty stack");
+                    self.push(Value::Boolean(values_equal(a, b)));
+                }
+                OpCode::Add
+                | OpCode::Subtract
+                | OpCode::Multiply
+                | OpCode::Divide
+                | OpCode::Greater
+                | OpCode::Less => {
                     let b = match self.pop().expect("empty stack") {
                         Value::Number(number) => number,
                         _ => {
@@ -72,14 +82,16 @@ impl VM {
                             return Err(InterpretError::RuntimeError);
                         }
                     };
-                    let ret = match op {
-                        OpCode::Add => a + b,
-                        OpCode::Subtract => a - b,
-                        OpCode::Multiply => a * b,
-                        OpCode::Divide => a / b,
+                    let val = match op {
+                        OpCode::Add => Value::Number(a + b),
+                        OpCode::Subtract => Value::Number(a - b),
+                        OpCode::Multiply => Value::Number(a * b),
+                        OpCode::Divide => Value::Number(a / b),
+                        OpCode::Greater => Value::Boolean(a > b),
+                        OpCode::Less => Value::Boolean(a < b),
                         _ => unreachable!(),
                     };
-                    self.push(Value::Number(ret));
+                    self.push(val);
                 }
                 OpCode::Not => {
                     let val = self.pop().expect("empty stack");
@@ -146,4 +158,12 @@ impl VM {
 
 fn is_falsey(value: Value) -> bool {
     matches!(value, Value::Nil | Value::Boolean(false))
+}
+
+fn values_equal(a: Value, b: Value) -> bool {
+    match a {
+        Value::Boolean(val_a) => matches!(b, Value::Boolean(val_b) if val_a == val_b),
+        Value::Number(val_a) => matches!(b, Value::Number(val_b) if val_a == val_b),
+        Value::Nil => matches!(b, Value::Nil),
+    }
 }

@@ -123,13 +123,13 @@ impl<'src> ParseRuleTable<'src> {
             { Slash,        { None, Some(Compiler::binary), Precedence::Factor } },
             { Star,         { None, Some(Compiler::binary), Precedence::Factor } },
             { Bang,         { Some(Compiler::unary), None, Precedence::None } },
-            { BangEqual,    { None, None, Precedence::None } },
+            { BangEqual,    { None, Some(Compiler::binary), Precedence::Equality } },
             { Equal,        { None, None, Precedence::None } },
-            { EqualEqual,   { None, None, Precedence::None } },
-            { Greater,      { None, None, Precedence::None } },
-            { GreaterEqual, { None, None, Precedence::None } },
-            { Less,         { None, None, Precedence::None } },
-            { LessEqual,    { None, None, Precedence::None } },
+            { EqualEqual,   { None, Some(Compiler::binary), Precedence::Equality } },
+            { Greater,      { None, Some(Compiler::binary), Precedence::Comparison } },
+            { GreaterEqual, { None, Some(Compiler::binary), Precedence::Comparison } },
+            { Less,         { None, Some(Compiler::binary), Precedence::Comparison } },
+            { LessEqual,    { None, Some(Compiler::binary), Precedence::Comparison } },
             { Identifier,   { None, None, Precedence::None } },
             { String,       { None, None, Precedence::None } },
             { Number,       { Some(Compiler::number), None, Precedence::None } },
@@ -242,6 +242,12 @@ impl<'src> Compiler<'src> {
         self.parse_precedence(rule.precedence.next());
 
         match tok.typ {
+            TokenType::BangEqual => self.emit_bytes(&[OpCode::Equal, OpCode::Not]),
+            TokenType::EqualEqual => self.emit_byte(OpCode::Equal),
+            TokenType::Greater => self.emit_byte(OpCode::Greater),
+            TokenType::GreaterEqual => self.emit_bytes(&[OpCode::Less, OpCode::Not]),
+            TokenType::Less => self.emit_byte(OpCode::Less),
+            TokenType::LessEqual => self.emit_bytes(&[OpCode::Greater, OpCode::Not]),
             TokenType::Plus => self.emit_byte(OpCode::Add),
             TokenType::Minus => self.emit_byte(OpCode::Subtract),
             TokenType::Star => self.emit_byte(OpCode::Multiply),
@@ -306,6 +312,14 @@ impl<'src> Compiler<'src> {
         let line = self.parser.previous.clone().unwrap().line as i32;
         let chunk = self.current_chunk_mut();
         chunk.write_chunk(byte, line);
+    }
+
+    fn emit_bytes(&mut self, bytes: &[OpCode]) {
+        let line = self.parser.previous.clone().unwrap().line as i32;
+        let chunk = self.current_chunk_mut();
+        bytes.iter().for_each(|&b| {
+            chunk.write_chunk(b, line);
+        })
     }
 
     fn emit_constant(&mut self, value: Value) {
