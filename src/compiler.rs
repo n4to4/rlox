@@ -1,7 +1,9 @@
 use crate::chunk::{Chunk, OpCode};
 use crate::common::DEBUG_PRINT_CODE;
+use crate::object::Object;
 use crate::scanner::{Scanner, Token, TokenType};
 use crate::value::Value;
+use std::rc::Rc;
 
 pub struct Compiler<'src> {
     parser: Parser<'src>,
@@ -131,7 +133,7 @@ impl<'src> ParseRuleTable<'src> {
             { Less,         { None, Some(Compiler::binary), Precedence::Comparison } },
             { LessEqual,    { None, Some(Compiler::binary), Precedence::Comparison } },
             { Identifier,   { None, None, Precedence::None } },
-            { String,       { None, None, Precedence::None } },
+            { String,       { Some(Compiler::string), None, Precedence::None } },
             { Number,       { Some(Compiler::number), None, Precedence::None } },
             { And,          { None, None, Precedence::None } },
             { Class,        { None, None, Precedence::None } },
@@ -211,6 +213,11 @@ impl<'src> Compiler<'src> {
         let tok = self.parser.previous.clone().expect("number");
         let value: f64 = tok.name.parse().expect("number");
         self.emit_constant(Value::Number(value));
+    }
+
+    fn string(&mut self) {
+        let tok = self.parser.previous.clone().expect("string");
+        self.emit_constant(Value::Obj(Rc::new(Object::String(tok.name.to_owned()))));
     }
 
     fn grouping(&mut self) {

@@ -1,10 +1,13 @@
+use super::object::Object;
 use std::ops::Index;
+use std::rc::Rc;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub enum Value {
     Boolean(bool),
     Number(f64),
     Nil,
+    Obj(Rc<Object>),
 }
 
 #[derive(Debug, Clone)]
@@ -32,6 +35,9 @@ impl std::fmt::Display for Value {
             Self::Number(number) => write!(f, "{}", number),
             Self::Boolean(bool) => write!(f, "{}", bool),
             Self::Nil => write!(f, "nil"),
+            Self::Obj(obj) => match obj.as_ref() {
+                Object::String(s) => write!(f, "{}", s),
+            },
         }
     }
 }

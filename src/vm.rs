@@ -1,6 +1,7 @@
 use crate::chunk::{disassemble_instruction, Chunk, OpCode};
 use crate::common::DEBUG_TRACE_EXECUTION;
 use crate::compiler::Compiler;
+use crate::object::*;
 use crate::value::Value;
 
 pub struct VM {
@@ -119,7 +120,7 @@ impl VM {
     }
 
     fn read_const(&self, idx: usize) -> Value {
-        self.chunk.constants.values[idx]
+        self.chunk.constants.values[idx].clone()
     }
 
     // Stack
@@ -140,7 +141,7 @@ impl VM {
     fn peek(&self, distance: usize) -> Option<Value> {
         let offset = 1 + distance;
         if offset <= self.stack.len() {
-            Some(self.stack[self.stack.len() - offset])
+            Some(self.stack[self.stack.len() - offset].clone())
         } else {
             None
         }
@@ -165,5 +166,8 @@ fn values_equal(a: Value, b: Value) -> bool {
         Value::Boolean(val_a) => matches!(b, Value::Boolean(val_b) if val_a == val_b),
         Value::Number(val_a) => matches!(b, Value::Number(val_b) if val_a == val_b),
         Value::Nil => matches!(b, Value::Nil),
+        Value::Obj(obj_a) => {
+            matches!(b, Value::Obj(obj_b) if Object::values_equal(obj_a.as_ref(), obj_b.as_ref()))
+        }
     }
 }
