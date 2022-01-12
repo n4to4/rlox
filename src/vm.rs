@@ -18,6 +18,45 @@ pub enum InterpretError {
     RuntimeError,
 }
 
+/*
+OpCode::Add
+ | OpCode::Subtract
+ | OpCode::Multiply
+ | OpCode::Divide
+ | OpCode::Greater
+ | OpCode::Less => {
+     let b = match self.pop().expect("empty stack") {
+         Value::Number(number) => number,
+         _ => {
+             self.runtime_error("Operands must be numbers.");
+             return Err(InterpretError::RuntimeError);
+         }
+     };
+     let a = match self.pop().expect("empty stack") {
+         Value::Number(number) => number,
+         _ => {
+             self.runtime_error("Operands must be numbers.");
+             return Err(InterpretError::RuntimeError);
+         }
+     };
+     let val = match op {
+         OpCode::Add => Value::Number(a + b),
+         OpCode::Subtract => Value::Number(a - b),
+         OpCode::Multiply => Value::Number(a * b),
+         OpCode::Divide => Value::Number(a / b),
+         OpCode::Greater => Value::Boolean(a > b),
+         OpCode::Less => Value::Boolean(a < b),
+         _ => unreachable!(),
+     };
+     self.push(val);
+ }
+*/
+/*
+OpCode::Sub => {
+    self.push(binop_number!(-));
+}
+*/
+
 impl VM {
     pub fn new() -> Self {
         VM {
@@ -63,37 +102,15 @@ impl VM {
                     let b = self.pop().expect("empty stack");
                     self.push(Value::Boolean(values_equal(a, b)));
                 }
-                OpCode::Add
-                | OpCode::Subtract
-                | OpCode::Multiply
-                | OpCode::Divide
-                | OpCode::Greater
-                | OpCode::Less => {
-                    let b = match self.pop().expect("empty stack") {
-                        Value::Number(number) => number,
-                        _ => {
-                            self.runtime_error("Operands must be numbers.");
-                            return Err(InterpretError::RuntimeError);
-                        }
-                    };
-                    let a = match self.pop().expect("empty stack") {
-                        Value::Number(number) => number,
-                        _ => {
-                            self.runtime_error("Operands must be numbers.");
-                            return Err(InterpretError::RuntimeError);
-                        }
-                    };
-                    let val = match op {
-                        OpCode::Add => Value::Number(a + b),
-                        OpCode::Subtract => Value::Number(a - b),
-                        OpCode::Multiply => Value::Number(a * b),
-                        OpCode::Divide => Value::Number(a / b),
-                        OpCode::Greater => Value::Boolean(a > b),
-                        OpCode::Less => Value::Boolean(a < b),
-                        _ => unreachable!(),
-                    };
-                    self.push(val);
+                OpCode::Add => {
+                    todo!()
                 }
+                OpCode::Subtract => self.number_binop(|a, b| Value::Number(a - b))?,
+                OpCode::Multiply => self.number_binop(|a, b| Value::Number(a * b))?,
+                OpCode::Divide => self.number_binop(|a, b| Value::Number(a / b))?,
+                OpCode::Greater => self.number_binop(|a, b| Value::Boolean(a > b))?,
+                OpCode::Less => self.number_binop(|a, b| Value::Boolean(a < b))?,
+
                 OpCode::Not => {
                     let val = self.pop().expect("empty stack");
                     self.push(Value::Boolean(is_falsey(val)));
@@ -117,6 +134,28 @@ impl VM {
             }
             self.ip += 1
         }
+    }
+
+    fn number_binop<F>(&mut self, f: F) -> Result<(), InterpretError>
+    where
+        F: Fn(f64, f64) -> Value,
+    {
+        let b = match self.pop().expect("empty stack") {
+            Value::Number(number) => number,
+            _ => {
+                self.runtime_error("Operands must be numbers.");
+                return Err(InterpretError::RuntimeError);
+            }
+        };
+        let a = match self.pop().expect("empty stack") {
+            Value::Number(number) => number,
+            _ => {
+                self.runtime_error("Operands must be numbers.");
+                return Err(InterpretError::RuntimeError);
+            }
+        };
+        self.push(f(a, b));
+        Ok(())
     }
 
     fn read_const(&self, idx: usize) -> Value {
