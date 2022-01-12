@@ -10,6 +10,17 @@ pub enum Value {
     Obj(Rc<Object>),
 }
 
+impl Value {
+    pub fn string(&self) -> String {
+        match &self {
+            Value::Obj(obj) => match obj.as_ref() {
+                Object::String(s) => s.to_owned(),
+            },
+            _ => todo!(),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct ValueArray {
     pub values: Vec<Value>,

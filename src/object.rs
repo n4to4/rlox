@@ -1,4 +1,5 @@
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum Object {
     String(String),
 }
@@ -8,5 +9,9 @@ impl Object {
         match (a, b) {
             (Self::String(a), Self::String(b)) => a == b,
         }
+    }
+
+    pub fn is_string(&self) -> bool {
+        matches!(*self, Object::String(_))
     }
 }

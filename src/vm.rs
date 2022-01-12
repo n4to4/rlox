@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::chunk::{disassemble_instruction, Chunk, OpCode};
 use crate::common::DEBUG_TRACE_EXECUTION;
 use crate::compiler::Compiler;
@@ -103,7 +105,26 @@ impl VM {
                     self.push(Value::Boolean(values_equal(a, b)));
                 }
                 OpCode::Add => {
-                    todo!()
+                    let b = self.peek(1).expect("empty stack");
+                    let a = self.peek(1).expect("empty stack");
+
+                    match (a, b) {
+                        (Value::Number(_), Value::Number(_)) => {
+                            self.number_binop(|a, b| Value::Number(a + b))?
+                        }
+                        (Value::Obj(_), Value::Obj(_)) => {
+                            let b = self.pop().expect("empty stack");
+                            let a = self.pop().expect("empty stack");
+                            let b = b.string();
+                            let a = a.string();
+                            let new = a + &b;
+                            self.push(Value::Obj(Rc::new(Object::String(new))));
+                        }
+                        _ => {
+                            self.runtime_error("Operands must be numbers.");
+                            return Err(InterpretError::RuntimeError);
+                        }
+                    }
                 }
                 OpCode::Subtract => self.number_binop(|a, b| Value::Number(a - b))?,
                 OpCode::Multiply => self.number_binop(|a, b| Value::Number(a * b))?,

@@ -217,7 +217,10 @@ impl<'src> Compiler<'src> {
 
     fn string(&mut self) {
         let tok = self.parser.previous.clone().expect("string");
-        self.emit_constant(Value::Obj(Rc::new(Object::String(tok.name.to_owned()))));
+        let len = tok.name.len();
+        self.emit_constant(Value::Obj(Rc::new(Object::String(
+            tok.name[1..len - 1].to_owned(),
+        ))));
     }
 
     fn grouping(&mut self) {
