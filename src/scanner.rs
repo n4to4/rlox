@@ -44,9 +44,13 @@ impl<'src> Scanner<'src> {
         }
     }
 
-    pub fn advance(&mut self) -> char {
+    pub fn advance(&mut self) -> Option<char> {
         self.current += 1;
-        self.source.as_bytes()[self.current - 1] as char
+        if self.current - 1 < self.source.as_bytes().len() {
+            Some(self.source.as_bytes()[self.current - 1] as char)
+        } else {
+            None
+        }
     }
 
     fn matches(&mut self, expected: char) -> bool {
@@ -106,12 +110,14 @@ impl<'src> Scanner<'src> {
     }
 
     pub fn scan_token(&mut self) -> Token<'src> {
+        self.skip_whitespace();
         self.start = self.current;
+
         if self.is_at_end() {
             return self.make_token(TokenType::Eof);
         }
+        let c = self.advance().expect("bug");
 
-        let c = self.advance();
         if c.is_ascii_alphabetic() || c == '_' {
             return self.identifier();
         }
@@ -280,7 +286,7 @@ impl<'src> Scanner<'src> {
     }
 
     fn is_at_end(&self) -> bool {
-        self.source.is_empty() || self.current == self.source.len() - 1
+        self.source.is_empty() || self.current == self.source.len()
     }
 }
 
