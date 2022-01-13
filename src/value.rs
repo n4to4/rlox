@@ -11,12 +11,10 @@ pub enum Value {
 }
 
 impl Value {
-    pub fn string(&self) -> String {
-        match &self {
-            Value::Obj(obj) => match obj.as_ref() {
-                Object::String(s) => s.to_owned(),
-            },
-            _ => todo!(),
+    pub fn as_obj(&self) -> Option<&Object> {
+        match *self {
+            Value::Obj(ref obj) => Some(obj.as_ref()),
+            _ => None,
         }
     }
 }

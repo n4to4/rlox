@@ -115,10 +115,16 @@ impl VM {
                         (Value::Obj(_), Value::Obj(_)) => {
                             let b = self.pop().expect("empty stack");
                             let a = self.pop().expect("empty stack");
-                            let b = b.string();
-                            let a = a.string();
-                            let new = a + &b;
-                            self.push(Value::Obj(Rc::new(Object::String(new))));
+                            match (a.as_obj(), b.as_obj()) {
+                                (Some(Object::String(str_a)), Some(Object::String(str_b))) => {
+                                    let new = str_a.to_owned() + str_b;
+                                    self.push(Value::Obj(Rc::new(Object::String(new))));
+                                }
+                                _ => {
+                                    self.runtime_error("Operands must be strings.");
+                                    return Err(InterpretError::RuntimeError);
+                                }
+                            }
                         }
                         _ => {
                             self.runtime_error("Operands must be numbers.");
