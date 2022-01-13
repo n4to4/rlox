@@ -80,7 +80,6 @@ impl<'src> Scanner<'src> {
         }
     }
 
-    #[allow(dead_code)]
     fn skip_whitespace(&mut self) {
         loop {
             if let Some(c) = self.peek() {
