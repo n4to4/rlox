@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::collections::HashSet;
 
 use crate::chunk::{disassemble_instruction, Chunk, OpCode};
 use crate::common::DEBUG_TRACE_EXECUTION;
@@ -10,6 +10,7 @@ pub struct VM {
     chunk: Chunk,
     ip: usize,
     stack: Vec<Value>,
+    strings: HashSet<String>, // intern
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -26,12 +27,19 @@ impl VM {
             chunk: Chunk::new(),
             ip: 0,
             stack: Vec::new(),
+            strings: HashSet::new(),
         }
+    }
+
+    pub fn new_string(&mut self, s: impl Into<String>) -> Value {
+        let s = s.into();
+        self.strings.insert(s.clone());
+        Value::new_string(s)
     }
 
     pub fn interpret(&mut self, source: &str) -> anyhow::Result<(), InterpretError> {
         let mut chunk = Chunk::new();
-        let mut compiler = Compiler::new(source, &mut chunk);
+        let mut compiler = Compiler::new(self, source, &mut chunk);
         compiler
             .compile()
             .map_err(|_err| InterpretError::CompileError)?;
@@ -79,7 +87,8 @@ impl VM {
                             match (a.as_obj(), b.as_obj()) {
                                 (Some(Object::String(str_a)), Some(Object::String(str_b))) => {
                                     let new = str_a.to_owned() + str_b;
-                                    self.push(Value::Obj(Rc::new(Object::String(new))));
+                                    let string = self.new_string(new);
+                                    self.push(string);
                                 }
                                 _ => {
                                     self.runtime_error("Operands must be strings.");

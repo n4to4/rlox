@@ -17,6 +17,10 @@ impl Value {
             _ => None,
         }
     }
+
+    pub fn new_string(s: String) -> Value {
+        Value::Obj(Rc::new(Object::String(s.into())))
+    }
 }
 
 #[derive(Debug, Clone)]

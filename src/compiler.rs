@@ -1,11 +1,11 @@
 use crate::chunk::{Chunk, OpCode};
 use crate::common::DEBUG_PRINT_CODE;
-use crate::object::Object;
 use crate::scanner::{Scanner, Token, TokenType};
 use crate::value::Value;
-use std::rc::Rc;
+use crate::vm::VM;
 
 pub struct Compiler<'src> {
+    vm: &'src mut VM,
     parser: Parser<'src>,
     scanner: Scanner<'src>,
     compiling_chunk: &'src mut Chunk,
@@ -160,8 +160,9 @@ impl<'src> ParseRuleTable<'src> {
 }
 
 impl<'src> Compiler<'src> {
-    pub fn new(source: &'src str, chunk: &'src mut Chunk) -> Self {
+    pub fn new(vm: &'src mut VM, source: &'src str, chunk: &'src mut Chunk) -> Self {
         Compiler {
+            vm,
             parser: Parser::new(),
             scanner: Scanner::new(source),
             compiling_chunk: chunk,
@@ -218,9 +219,9 @@ impl<'src> Compiler<'src> {
     fn string(&mut self) {
         let tok = self.parser.previous.clone().expect("string");
         let len = tok.name.len();
-        self.emit_constant(Value::Obj(Rc::new(Object::String(
-            tok.name[1..len - 1].to_owned(),
-        ))));
+        //self.emit_constant(Value::new_string(&tok.name[1..len - 1]));
+        let string = self.vm.new_string(&tok.name[1..len - 1]);
+        self.emit_constant(string);
     }
 
     fn grouping(&mut self) {

@@ -1,5 +1,4 @@
 #[derive(Debug)]
-#[non_exhaustive]
 pub enum Object {
     String(String),
 }
