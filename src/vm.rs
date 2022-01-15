@@ -20,45 +20,6 @@ pub enum InterpretError {
     RuntimeError,
 }
 
-/*
-OpCode::Add
- | OpCode::Subtract
- | OpCode::Multiply
- | OpCode::Divide
- | OpCode::Greater
- | OpCode::Less => {
-     let b = match self.pop().expect("empty stack") {
-         Value::Number(number) => number,
-         _ => {
-             self.runtime_error("Operands must be numbers.");
-             return Err(InterpretError::RuntimeError);
-         }
-     };
-     let a = match self.pop().expect("empty stack") {
-         Value::Number(number) => number,
-         _ => {
-             self.runtime_error("Operands must be numbers.");
-             return Err(InterpretError::RuntimeError);
-         }
-     };
-     let val = match op {
-         OpCode::Add => Value::Number(a + b),
-         OpCode::Subtract => Value::Number(a - b),
-         OpCode::Multiply => Value::Number(a * b),
-         OpCode::Divide => Value::Number(a / b),
-         OpCode::Greater => Value::Boolean(a > b),
-         OpCode::Less => Value::Boolean(a < b),
-         _ => unreachable!(),
-     };
-     self.push(val);
- }
-*/
-/*
-OpCode::Sub => {
-    self.push(binop_number!(-));
-}
-*/
-
 impl VM {
     pub fn new() -> Self {
         VM {
