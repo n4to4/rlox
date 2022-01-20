@@ -19,7 +19,7 @@ impl Value {
     }
 
     pub fn new_string(s: String) -> Value {
-        Value::Obj(Rc::new(Object::String(s.into())))
+        Value::Obj(Rc::new(Object::String(s)))
     }
 }
 

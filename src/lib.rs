@@ -5,6 +5,5 @@ pub mod common;
 pub mod compiler;
 pub mod object;
 pub mod scanner;
-pub mod table;
 pub mod value;
 pub mod vm;
