@@ -127,10 +127,10 @@ impl VM {
                     println!("{}\n", v);
                 }
                 OpCode::Return => {
-                    if let Some(value) = self.pop() {
-                        println!("{}", value);
-                    }
-                    return Ok(());
+                    //if let Some(value) = self.pop() {
+                    //    println!("{}", value);
+                    //}
+                    //return Ok(());
                 }
             }
             self.ip += 1
