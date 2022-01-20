@@ -172,8 +172,11 @@ impl<'src> Compiler<'src> {
 
     pub fn compile(&mut self) -> anyhow::Result<()> {
         self.advance();
-        self.expression();
-        self.consume(TokenType::Eof, "Expect end of expression.");
+
+        while !self.matches(TokenType::Eof) {
+            self.statement();
+        }
+
         self.end_compiler();
 
         if self.parser.had_error {
@@ -208,6 +211,22 @@ impl<'src> Compiler<'src> {
 
     fn expression(&mut self) {
         self.parse_precedence(Precedence::Assignment);
+    }
+
+    fn print_statement(&mut self) {
+        self.expression();
+        self.consume(TokenType::Semicolon, "Expect ';' after value.");
+        self.emit_byte(OpCode::Print);
+    }
+
+    fn declaration(&mut self) {
+        self.statement();
+    }
+
+    fn statement(&mut self) {
+        if self.matches(TokenType::Print) {
+            self.print_statement();
+        }
     }
 
     fn number(&mut self) {
@@ -317,6 +336,19 @@ impl<'src> Compiler<'src> {
             }
         }
         self.error_at_current(message);
+    }
+
+    fn matches(&mut self, typ: TokenType) -> bool {
+        if !self.check(typ) {
+            return false;
+        }
+        self.advance();
+        true
+    }
+
+    fn check(&self, typ: TokenType) -> bool {
+        let tok = self.parser.current.clone().unwrap();
+        tok.typ == typ
     }
 
     fn emit_byte(&mut self, byte: OpCode) {

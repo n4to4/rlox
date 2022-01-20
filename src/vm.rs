@@ -122,6 +122,10 @@ impl VM {
                     };
                     self.push(Value::Number(-v));
                 }
+                OpCode::Print => {
+                    let v = self.pop().unwrap();
+                    println!("{}\n", v);
+                }
                 OpCode::Return => {
                     if let Some(value) = self.pop() {
                         println!("{}", value);
