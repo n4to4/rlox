@@ -381,11 +381,18 @@ impl<'src> Compiler<'src> {
     }
 
     fn parse_variable(&mut self, error_message: &str) -> u8 {
-        todo!();
+        self.consume(TokenType::Identifier, error_message);
+        let p = self.parser.previous.clone().unwrap();
+        self.identifier_constant(&p)
+    }
+
+    fn identifier_constant(&mut self, name: &Token) -> u8 {
+        let v = self.vm.new_string(name.name);
+        self.make_constant(v)
     }
 
     fn define_variable(&mut self, global: u8) {
-        //
+        self.emit_byte(OpCode::DefineGlobal(global));
     }
 
     fn get_rule(&self, typ: TokenType) -> ParseRule<'src> {

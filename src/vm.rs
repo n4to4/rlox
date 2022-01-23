@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use crate::chunk::{disassemble_instruction, Chunk, OpCode};
 use crate::common::DEBUG_TRACE_EXECUTION;
@@ -10,6 +10,7 @@ pub struct VM {
     chunk: Chunk,
     ip: usize,
     stack: Vec<Value>,
+    globals: HashMap<String, Value>,
     strings: HashSet<String>, // intern
 }
 
@@ -27,6 +28,7 @@ impl VM {
             chunk: Chunk::new(),
             ip: 0,
             stack: Vec::new(),
+            globals: HashMap::new(),
             strings: HashSet::new(),
         }
     }
@@ -69,6 +71,13 @@ impl VM {
                 OpCode::True => self.push(Value::Boolean(true)),
                 OpCode::False => self.push(Value::Boolean(false)),
                 OpCode::Pop => {
+                    self.pop();
+                }
+                OpCode::DefineGlobal(name_idx) => {
+                    let k = self.read_const(name_idx as usize);
+                    let k = k.string().unwrap();
+                    let v = self.peek(0).unwrap();
+                    self.globals.insert(k, v);
                     self.pop();
                 }
                 OpCode::Equal => {

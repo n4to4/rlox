@@ -21,6 +21,13 @@ impl Value {
     pub fn new_string(s: String) -> Value {
         Value::Obj(Rc::new(Object::String(s)))
     }
+
+    pub fn string(&self) -> Option<String> {
+        match &self {
+            Value::Obj(obj) if obj.is_string() => Some(obj.as_str().to_owned()),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]

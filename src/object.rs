@@ -13,4 +13,10 @@ impl Object {
     pub fn is_string(&self) -> bool {
         matches!(*self, Object::String(_))
     }
+
+    pub fn as_str(&self) -> &str {
+        match self {
+            Object::String(s) => s.as_str(),
+        }
+    }
 }
