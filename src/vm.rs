@@ -68,6 +68,9 @@ impl VM {
                 OpCode::Nil => self.push(Value::Nil),
                 OpCode::True => self.push(Value::Boolean(true)),
                 OpCode::False => self.push(Value::Boolean(false)),
+                OpCode::Pop => {
+                    self.pop();
+                }
                 OpCode::Equal => {
                     let a = self.pop().expect("empty stack");
                     let b = self.pop().expect("empty stack");
@@ -131,6 +134,7 @@ impl VM {
                     //    println!("{}", value);
                     //}
                     //return Ok(());
+                    return Ok(());
                 }
             }
             self.ip += 1
