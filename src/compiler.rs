@@ -225,8 +225,40 @@ impl<'src> Compiler<'src> {
         self.emit_byte(OpCode::Print);
     }
 
+    fn synchronize(&mut self) {
+        self.parser.panic_mode = false;
+
+        while self.parser.current.clone().unwrap().typ != TokenType::Eof {
+            if self.parser.previous.clone().unwrap().typ == TokenType::Semicolon {
+                return;
+            }
+            match self.parser.current.clone().unwrap().typ {
+                TokenType::Class
+                | TokenType::Fun
+                | TokenType::Var
+                | TokenType::For
+                | TokenType::If
+                | TokenType::While
+                | TokenType::Print
+                | TokenType::Return => {
+                    return;
+                }
+                _ => {
+                    // do nothing.
+                }
+            }
+
+            self.advance();
+        }
+    }
+
+    #[allow(dead_code)]
     fn declaration(&mut self) {
         self.statement();
+
+        if self.parser.panic_mode {
+            self.synchronize();
+        }
     }
 
     fn statement(&mut self) {
