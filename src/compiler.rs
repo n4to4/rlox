@@ -213,6 +213,22 @@ impl<'src> Compiler<'src> {
         self.parse_precedence(Precedence::Assignment);
     }
 
+    fn var_declaration(&mut self) {
+        let global = self.parse_variable("Expect variable name.");
+
+        if self.matches(TokenType::Equal) {
+            self.expression();
+        } else {
+            self.emit_byte(OpCode::Nil);
+        }
+        self.consume(
+            TokenType::Semicolon,
+            "Expect ';' after variable declaration",
+        );
+
+        self.define_variable(global);
+    }
+
     fn expression_statement(&mut self) {
         self.expression();
         self.consume(TokenType::Semicolon, "Expect ';' after expression.");
@@ -254,7 +270,11 @@ impl<'src> Compiler<'src> {
 
     #[allow(dead_code)]
     fn declaration(&mut self) {
-        self.statement();
+        if self.matches(TokenType::Var) {
+            self.var_declaration();
+        } else {
+            self.statement();
+        }
 
         if self.parser.panic_mode {
             self.synchronize();
@@ -358,6 +378,14 @@ impl<'src> Compiler<'src> {
                 infix_rule(self);
             }
         }
+    }
+
+    fn parse_variable(&mut self, error_message: &str) -> u8 {
+        todo!();
+    }
+
+    fn define_variable(&mut self, global: u8) {
+        //
     }
 
     fn get_rule(&self, typ: TokenType) -> ParseRule<'src> {
