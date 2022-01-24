@@ -93,6 +93,17 @@ impl VM {
                     self.globals.insert(k, v);
                     self.pop();
                 }
+                OpCode::SetGlobal(name_idx) => {
+                    let k = self.read_const(name_idx as usize);
+                    let k = k.string().unwrap();
+                    let v = self.peek(0).unwrap();
+                    if let Some(var) = self.globals.get_mut(&k) {
+                        *var = v;
+                    } else {
+                        self.runtime_error(&format!("Undefined variable '{}'.", &k));
+                        return Err(InterpretError::RuntimeError);
+                    }
+                }
                 OpCode::Equal => {
                     let a = self.pop().expect("empty stack");
                     let b = self.pop().expect("empty stack");

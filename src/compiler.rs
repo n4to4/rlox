@@ -308,8 +308,13 @@ impl<'src> Compiler<'src> {
 
     fn named_variable(&mut self, name: Token) {
         let arg = self.identifier_constant(&name);
-        self.emit_byte(OpCode::GetGlobal(arg));
-        //
+
+        if self.matches(TokenType::Equal) {
+            self.expression();
+            self.emit_byte(OpCode::SetGlobal(arg));
+        } else {
+            self.emit_byte(OpCode::GetGlobal(arg));
+        }
     }
 
     fn grouping(&mut self) {
