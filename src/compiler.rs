@@ -132,7 +132,7 @@ impl<'src> ParseRuleTable<'src> {
             { GreaterEqual, { None, Some(Compiler::binary), Precedence::Comparison } },
             { Less,         { None, Some(Compiler::binary), Precedence::Comparison } },
             { LessEqual,    { None, Some(Compiler::binary), Precedence::Comparison } },
-            { Identifier,   { None, None, Precedence::None } },
+            { Identifier,   { Some(Compiler::variable), None, Precedence::None } },
             { String,       { Some(Compiler::string), None, Precedence::None } },
             { Number,       { Some(Compiler::number), None, Precedence::None } },
             { And,          { None, None, Precedence::None } },
@@ -174,7 +174,7 @@ impl<'src> Compiler<'src> {
         self.advance();
 
         while !self.matches(TokenType::Eof) {
-            self.statement();
+            self.declaration();
         }
 
         self.end_compiler();
@@ -268,7 +268,6 @@ impl<'src> Compiler<'src> {
         }
     }
 
-    #[allow(dead_code)]
     fn declaration(&mut self) {
         if self.matches(TokenType::Var) {
             self.var_declaration();
@@ -301,6 +300,16 @@ impl<'src> Compiler<'src> {
         //self.emit_constant(Value::new_string(&tok.name[1..len - 1]));
         let string = self.vm.new_string(&tok.name[1..len - 1]);
         self.emit_constant(string);
+    }
+
+    fn variable(&mut self) {
+        self.named_variable(self.parser.previous.clone().unwrap());
+    }
+
+    fn named_variable(&mut self, name: Token) {
+        let arg = self.identifier_constant(&name);
+        self.emit_byte(OpCode::GetGlobal(arg));
+        //
     }
 
     fn grouping(&mut self) {

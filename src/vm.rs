@@ -73,6 +73,19 @@ impl VM {
                 OpCode::Pop => {
                     self.pop();
                 }
+                OpCode::GetGlobal(name_idx) => {
+                    let k = self.read_const(name_idx as usize);
+                    let k = k.string().unwrap();
+                    match self.globals.get(&k).cloned() {
+                        Some(v) => {
+                            self.push(v.clone());
+                        }
+                        None => {
+                            self.runtime_error(&format!("Undefined variable '{}'.", &k));
+                            return Err(InterpretError::RuntimeError);
+                        }
+                    }
+                }
                 OpCode::DefineGlobal(name_idx) => {
                     let k = self.read_const(name_idx as usize);
                     let k = k.string().unwrap();
