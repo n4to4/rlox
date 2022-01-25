@@ -19,6 +19,15 @@ struct Parser<'src> {
     panic_mode: bool,
 }
 
+struct Compiler2<'src> {
+    locals: [Local<'src>; u8::MAX as usize],
+}
+
+struct Local<'src> {
+    name: Token<'src>,
+    depth: i32,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum Precedence {
     None = 0,
