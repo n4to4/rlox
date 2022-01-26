@@ -8,6 +8,7 @@ pub struct Compiler<'src> {
     vm: &'src mut VM,
     parser: Parser<'src>,
     scanner: Scanner<'src>,
+    current: Compiler2<'src>,
     compiling_chunk: &'src mut Chunk,
     parse_rule_table: ParseRuleTable<'src>,
 }
@@ -19,8 +20,11 @@ struct Parser<'src> {
     panic_mode: bool,
 }
 
+// stackframe
 struct Compiler2<'src> {
-    locals: [Local<'src>; u8::MAX as usize],
+    locals: Vec<Local<'src>>,
+    local_count: i32,
+    scope_depth: i32,
 }
 
 struct Local<'src> {
@@ -174,6 +178,7 @@ impl<'src> Compiler<'src> {
             vm,
             parser: Parser::new(),
             scanner: Scanner::new(source),
+            current: Compiler2::new(),
             compiling_chunk: chunk,
             parse_rule_table: ParseRuleTable::new(),
         }
@@ -535,6 +540,16 @@ impl<'src> Parser<'src> {
             previous: None,
             had_error: false,
             panic_mode: false,
+        }
+    }
+}
+
+impl<'src> Compiler2<'src> {
+    fn new() -> Self {
+        Compiler2 {
+            locals: Vec::new(),
+            local_count: 0,
+            scope_depth: 0,
         }
     }
 }
