@@ -207,6 +207,14 @@ impl<'src> Compiler<'src> {
         }
     }
 
+    fn begin_scope(&mut self) {
+        self.current.scope_depth += 1;
+    }
+
+    fn end_scope(&mut self) {
+        self.current.scope_depth -= 1;
+    }
+
     fn advance(&mut self) {
         self.parser.previous = self.parser.current.take();
         loop {
@@ -225,6 +233,14 @@ impl<'src> Compiler<'src> {
 
     fn expression(&mut self) {
         self.parse_precedence(Precedence::Assignment);
+    }
+
+    fn block(&mut self) {
+        while !self.check(TokenType::RightBrace) && !self.check(TokenType::Eof) {
+            self.declaration();
+        }
+
+        self.consume(TokenType::RightBrace, "Expect '}' after block.");
     }
 
     fn var_declaration(&mut self) {
@@ -297,6 +313,10 @@ impl<'src> Compiler<'src> {
     fn statement(&mut self) {
         if self.matches(TokenType::Print) {
             self.print_statement();
+        } else if self.matches(TokenType::LeftBrace) {
+            self.begin_scope();
+            self.block();
+            self.end_scope();
         } else {
             self.expression_statement();
         }
