@@ -27,6 +27,7 @@ struct Compiler2<'src> {
     scope_depth: i32,
 }
 
+#[derive(Debug, Clone)]
 struct Local<'src> {
     name: Token<'src>,
     depth: i32,
@@ -341,7 +342,7 @@ impl<'src> Compiler<'src> {
     }
 
     fn named_variable(&mut self, name: Token, can_assign: bool) {
-        let arg = self.identifier_constant(&name);
+        let arg = self.identifier_constant(name);
 
         if can_assign && self.matches(TokenType::Equal) {
             self.expression();
@@ -435,16 +436,58 @@ impl<'src> Compiler<'src> {
 
     fn parse_variable(&mut self, error_message: &str) -> u8 {
         self.consume(TokenType::Identifier, error_message);
+
+        self.declare_variable();
+        if self.current.scope_depth > 0 {
+            return 0;
+        }
+
         let p = self.parser.previous.clone().unwrap();
-        self.identifier_constant(&p)
+        self.identifier_constant(p)
     }
 
-    fn identifier_constant(&mut self, name: &Token) -> u8 {
+    fn identifier_constant(&mut self, name: Token) -> u8 {
         let v = self.vm.new_string(name.name);
         self.make_constant(v)
     }
 
+    fn identifiers_equal(&self, a: &Token, b: &Token) -> bool {
+        a.name == b.name
+    }
+
+    fn add_local(&mut self, name: Token<'src>) {
+        let local = Local {
+            name,
+            depth: self.current.scope_depth,
+        };
+        self.current.locals.push(local);
+    }
+
+    fn declare_variable(&mut self) {
+        if self.current.scope_depth == 0 {
+            return;
+        }
+
+        let name = self.parser.previous.clone().unwrap();
+        let locals = self.current.locals.clone();
+        for loc in locals.iter().rev() {
+            if loc.depth != -1 && loc.depth < self.current.scope_depth {
+                break;
+            }
+
+            if self.identifiers_equal(&name, &loc.name) {
+                self.error("Already a variable with this name in this scope.");
+            }
+        }
+
+        self.add_local(name);
+    }
+
     fn define_variable(&mut self, global: u8) {
+        if self.current.scope_depth > 0 {
+            return;
+        }
+
         self.emit_byte(OpCode::DefineGlobal(global));
     }
 
