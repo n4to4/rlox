@@ -23,7 +23,7 @@ struct Parser<'src> {
 // stackframe
 struct Compiler2<'src> {
     locals: Vec<Local<'src>>,
-    local_count: i32,
+    //local_count: i32,
     scope_depth: i32,
 }
 
@@ -214,6 +214,16 @@ impl<'src> Compiler<'src> {
 
     fn end_scope(&mut self) {
         self.current.scope_depth -= 1;
+
+        loop {
+            let len = self.current.locals.len();
+            if len == 0 || self.current.locals[len - 1].depth <= self.current.scope_depth {
+                break;
+            }
+
+            self.emit_byte(OpCode::Pop);
+            self.current.locals.pop();
+        }
     }
 
     fn advance(&mut self) {
@@ -342,13 +352,18 @@ impl<'src> Compiler<'src> {
     }
 
     fn named_variable(&mut self, name: Token, can_assign: bool) {
-        let arg = self.identifier_constant(name);
+        let (get_op, set_op) = if let Some(arg) = self.resolve_local(&name) {
+            (OpCode::GetLocal(arg), OpCode::SetLocal(arg))
+        } else {
+            let arg = self.identifier_constant(name);
+            (OpCode::GetGlobal(arg), OpCode::SetGlobal(arg))
+        };
 
         if can_assign && self.matches(TokenType::Equal) {
             self.expression();
-            self.emit_byte(OpCode::SetGlobal(arg));
+            self.emit_byte(set_op);
         } else {
-            self.emit_byte(OpCode::GetGlobal(arg));
+            self.emit_byte(get_op);
         }
     }
 
@@ -453,6 +468,16 @@ impl<'src> Compiler<'src> {
 
     fn identifiers_equal(&self, a: &Token, b: &Token) -> bool {
         a.name == b.name
+    }
+
+    fn resolve_local(&self, name: &Token) -> Option<u8> {
+        let locals = &self.current.locals;
+        for (i, local) in locals.iter().enumerate().rev() {
+            if self.identifiers_equal(&name, &local.name) {
+                return Some(i as u8);
+            }
+        }
+        None
     }
 
     fn add_local(&mut self, name: Token<'src>) {
@@ -611,7 +636,6 @@ impl<'src> Compiler2<'src> {
     fn new() -> Self {
         Compiler2 {
             locals: Vec::new(),
-            local_count: 0,
             scope_depth: 0,
         }
     }

@@ -73,6 +73,9 @@ impl VM {
                 OpCode::Pop => {
                     self.pop();
                 }
+                OpCode::GetLocal(name_idx) => {
+                    self.push(self.stack[name_idx as usize].clone());
+                }
                 OpCode::GetGlobal(name_idx) => {
                     let k = self.read_const(name_idx as usize);
                     let k = k.string().unwrap();
@@ -92,6 +95,9 @@ impl VM {
                     let v = self.peek(0).unwrap();
                     self.globals.insert(k, v);
                     self.pop();
+                }
+                OpCode::SetLocal(name_idx) => {
+                    self.stack[name_idx as usize] = self.peek(0).unwrap();
                 }
                 OpCode::SetGlobal(name_idx) => {
                     let k = self.read_const(name_idx as usize);
