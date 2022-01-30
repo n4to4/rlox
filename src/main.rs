@@ -6,7 +6,7 @@ fn main() -> anyhow::Result<()> {
     if it.len() == 1 {
         repl()?;
     } else if it.len() == 2 {
-        run_file(&it.next().unwrap())?;
+        run_file(&it.nth(1).unwrap())?;
     } else {
         eprintln!("Usage: rlox [path]");
     }
