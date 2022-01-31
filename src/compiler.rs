@@ -461,6 +461,11 @@ impl<'src> Compiler<'src> {
         self.identifier_constant(p)
     }
 
+    fn mark_initialized(&mut self) {
+        let len = self.current.locals.len();
+        self.current.locals[len - 1].depth = self.current.scope_depth;
+    }
+
     fn identifier_constant(&mut self, name: Token) -> u8 {
         let v = self.vm.new_string(name.name);
         self.make_constant(v)
@@ -470,10 +475,13 @@ impl<'src> Compiler<'src> {
         a.name == b.name
     }
 
-    fn resolve_local(&self, name: &Token) -> Option<u8> {
+    fn resolve_local(&mut self, name: &Token) -> Option<u8> {
         let locals = &self.current.locals;
         for (i, local) in locals.iter().enumerate().rev() {
-            if self.identifiers_equal(&name, &local.name) {
+            if self.identifiers_equal(name, &local.name) {
+                if local.depth == -1 {
+                    self.error("Can't read local variable in its own initializer.");
+                }
                 return Some(i as u8);
             }
         }
@@ -483,7 +491,7 @@ impl<'src> Compiler<'src> {
     fn add_local(&mut self, name: Token<'src>) {
         let local = Local {
             name,
-            depth: self.current.scope_depth,
+            depth: -1, //self.current.scope_depth,
         };
         self.current.locals.push(local);
     }
@@ -510,6 +518,7 @@ impl<'src> Compiler<'src> {
 
     fn define_variable(&mut self, global: u8) {
         if self.current.scope_depth > 0 {
+            self.mark_initialized();
             return;
         }
 
