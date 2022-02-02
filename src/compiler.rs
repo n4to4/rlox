@@ -276,6 +276,10 @@ impl<'src> Compiler<'src> {
         self.emit_byte(OpCode::Pop);
     }
 
+    fn if_statement(&mut self) {
+        todo!();
+    }
+
     fn print_statement(&mut self) {
         self.expression();
         self.consume(TokenType::Semicolon, "Expect ';' after value.");
@@ -324,6 +328,8 @@ impl<'src> Compiler<'src> {
     fn statement(&mut self) {
         if self.matches(TokenType::Print) {
             self.print_statement();
+        } else if self.matches(TokenType::If) {
+            self.if_statement();
         } else if self.matches(TokenType::LeftBrace) {
             self.begin_scope();
             self.block();
