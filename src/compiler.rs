@@ -277,7 +277,14 @@ impl<'src> Compiler<'src> {
     }
 
     fn if_statement(&mut self) {
-        todo!();
+        self.consume(TokenType::LeftParen, "Expect '(' after 'if'.");
+        self.expression();
+        self.consume(TokenType::RightParen, "Expect ')' after condition.");
+
+        let then_jump = self.emit_jump(OpCode::JumpIfFalse(0));
+        self.statement();
+
+        self.patch_jump(then_jump);
     }
 
     fn print_statement(&mut self) {
@@ -576,9 +583,25 @@ impl<'src> Compiler<'src> {
         })
     }
 
+    fn emit_jump(&mut self, instruction: OpCode) -> u16 {
+        self.emit_byte(instruction);
+        let chunk = self.current_chunk();
+        chunk.code.len() as u16 - 1
+    }
+
     fn emit_constant(&mut self, value: Value) {
         let constant = self.make_constant(value);
         self.emit_byte(OpCode::Constant(constant));
+    }
+
+    fn patch_jump(&mut self, offset: u16) {
+        let offset = offset as usize;
+        let jump = self.current_chunk().code.len() - offset - 1;
+        if jump > u16::MAX as usize {
+            self.error("Too much code to jump over.");
+        }
+        let chunk = self.current_chunk_mut();
+        chunk.code[offset] = OpCode::JumpIfFalse(jump as u16);
     }
 
     fn make_constant(&mut self, value: Value) -> u8 {
