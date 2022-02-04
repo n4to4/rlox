@@ -282,9 +282,17 @@ impl<'src> Compiler<'src> {
         self.consume(TokenType::RightParen, "Expect ')' after condition.");
 
         let then_jump = self.emit_jump(OpCode::JumpIfFalse(0));
+        self.emit_byte(OpCode::Pop);
         self.statement();
 
-        self.patch_jump(then_jump);
+        let else_jump = self.emit_jump(OpCode::Jump(0));
+        self.patch_jump(then_jump, OpCode::JumpIfFalse(0));
+        self.emit_byte(OpCode::Pop);
+
+        if self.matches(TokenType::Else) {
+            self.statement();
+        }
+        self.patch_jump(else_jump, OpCode::Jump(0));
     }
 
     fn print_statement(&mut self) {
@@ -594,14 +602,18 @@ impl<'src> Compiler<'src> {
         self.emit_byte(OpCode::Constant(constant));
     }
 
-    fn patch_jump(&mut self, offset: u16) {
+    fn patch_jump(&mut self, offset: u16, new_opcode: OpCode) {
         let offset = offset as usize;
         let jump = self.current_chunk().code.len() - offset - 1;
         if jump > u16::MAX as usize {
             self.error("Too much code to jump over.");
         }
         let chunk = self.current_chunk_mut();
-        chunk.code[offset] = OpCode::JumpIfFalse(jump as u16);
+        chunk.code[offset] = match new_opcode {
+            OpCode::JumpIfFalse(_) => OpCode::JumpIfFalse(jump as u16),
+            OpCode::Jump(_) => OpCode::Jump(jump as u16),
+            _ => unreachable!("must not happen"),
+        }
     }
 
     fn make_constant(&mut self, value: Value) -> u8 {

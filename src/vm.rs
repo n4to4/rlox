@@ -168,6 +168,9 @@ impl VM {
                     let v = self.pop().unwrap();
                     println!("{}\n", v);
                 }
+                OpCode::Jump(offset) => {
+                    self.ip += offset as usize;
+                }
                 OpCode::JumpIfFalse(offset) => {
                     if is_falsey(self.peek(0).unwrap()) {
                         self.ip += offset as usize;

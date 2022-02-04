@@ -22,6 +22,7 @@ pub enum OpCode {
     Not,
     Negate,
     Print,
+    Jump(u16),
     JumpIfFalse(u16),
     Return,
 }
