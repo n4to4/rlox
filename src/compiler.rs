@@ -149,7 +149,7 @@ impl<'src> ParseRuleTable<'src> {
             { Identifier,   { Some(Compiler::variable), None, Precedence::None } },
             { String,       { Some(Compiler::string), None, Precedence::None } },
             { Number,       { Some(Compiler::number), None, Precedence::None } },
-            { And,          { None, None, Precedence::None } },
+            { And,          { None, Some(Compiler::and_), Precedence::And } },
             { Class,        { None, None, Precedence::None } },
             { Else,         { None, None, Precedence::None } },
             { False,        { Some(Compiler::literal), None, Precedence::None } },
@@ -157,7 +157,7 @@ impl<'src> ParseRuleTable<'src> {
             { Fun,          { None, None, Precedence::None } },
             { If,           { None, None, Precedence::None } },
             { Nil,          { Some(Compiler::literal), None, Precedence::None } },
-            { Or,           { None, None, Precedence::None } },
+            { Or,           { None, Some(Compiler::or_), Precedence::Or } },
             { Print,        { None, None, Precedence::None } },
             { Return,       { None, None, Precedence::None } },
             { Super,        { None, None, Precedence::None } },
@@ -544,6 +544,26 @@ impl<'src> Compiler<'src> {
         }
 
         self.emit_byte(OpCode::DefineGlobal(global));
+    }
+
+    fn and_(&mut self, can_assign: bool) {
+        let end_jump = self.emit_jump(OpCode::JumpIfFalse(0));
+
+        self.emit_byte(OpCode::Pop);
+        self.parse_precedence(Precedence::And);
+
+        self.patch_jump(end_jump, OpCode::JumpIfFalse(0));
+    }
+
+    fn or_(&mut self, can_assign: bool) {
+        let else_jump = self.emit_jump(OpCode::JumpIfFalse(0));
+        let end_jump = self.emit_jump(OpCode::Jump(0));
+
+        self.patch_jump(else_jump, OpCode::JumpIfFalse(0));
+        self.emit_byte(OpCode::Pop);
+
+        self.parse_precedence(Precedence::Or);
+        self.patch_jump(end_jump, OpCode::Jump(0));
     }
 
     fn get_rule(&self, typ: TokenType) -> ParseRule<'src> {
